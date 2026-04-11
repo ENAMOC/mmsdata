@@ -1,1 +1,767 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Product List|Homedecor</title>
+    <style>
+        /* RESET: remove all margins, paddings, borders that cause whitespace */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;            /* prevent body scroll, table will handle internal scroll */
+            background: #eef2f7;
+            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        /* full-screen container: no padding, occupies entire viewport */
+        .fullscreen-core {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            background: white;
+            box-shadow: none;
+            border-radius: 0;
+            overflow: hidden;
+        }
+
+        /* compact header with minimal vertical space, no outer gaps */
+        .core-header {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafd 100%);
+            border-bottom: 1px solid #e2e9f2;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .title-section h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            background: linear-gradient(145deg, #1f4e6e, #0f2c40);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.2px;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .title-section p {
+            font-size: 11px;
+            color: #4a627a;
+            margin-top: 3px;
+            margin-bottom: 0;
+        }
+
+        .info-panel {
+            background: #eef2fc;
+            padding: 5px 16px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .info-label {
+            color: #2c5a7a;
+        }
+
+        .info-value {
+            color: #1f3b4c;
+            font-weight: 700;
+            background: white;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .last-updated-badge {
+            background: #dff0e4;
+            border-radius: 30px;
+            padding: 3px 12px;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .admin-note {
+            background: #fef4e8;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 10px;
+            color: #b45f06;
+        }
+
+        /* filter toolbar - compact, no outer margins */
+        .filter-toolbar {
+            padding: 10px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #e9edf2;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .search-global {
+            display: flex;
+            align-items: center;
+            background: #f1f5f9;
+            border-radius: 60px;
+            padding: 4px 14px;
+            gap: 8px;
+            flex: 2;
+            min-width: 240px;
+            border: 1px solid #e2e8f0;
+            transition: 0.2s;
+        }
+
+        .search-global:focus-within {
+            background: white;
+            border-color: #2c6e9e;
+            box-shadow: 0 0 0 2px rgba(44,110,158,0.2);
+        }
+
+        .search-global input {
+            border: none;
+            background: transparent;
+            padding: 8px 0;
+            font-size: 13px;
+            width: 100%;
+            outline: none;
+        }
+
+        .search-icon {
+            font-size: 16px;
+            color: #6c86a0;
+        }
+
+        .clear-search {
+            background: none;
+            border: none;
+            color: #c7452c;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 30px;
+        }
+
+        .clear-search:hover {
+            background: #ffe6e5;
+        }
+
+        .filter-stats-badge {
+            background: #eef2fa;
+            border-radius: 32px;
+            padding: 4px 14px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* status area - minimal top/bottom */
+        #statusMessageArea {
+            padding: 0 20px;
+            margin: 6px 0 0 0;
+            flex-shrink: 0;
+        }
+
+        .status-message {
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        /* TABLE WRAPPER: takes all remaining vertical space, no padding, full scroll */
+        .table-wrapper {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: auto;
+            width: 100%;
+            background: white;
+            scrollbar-width: thin;
+            min-height: 0;   /* important for flex overflow */
+        }
+
+        /* full-width table, no margin, sticky header */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            font-family: 'Segoe UI', system-ui;
+        }
+
+        .data-table th {
+            background: #1f3b4c;
+            color: white;
+            padding: 11px 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.1s;
+        }
+
+        .data-table th:hover {
+            background: #2c556e;
+        }
+
+        .th-sort {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sort-arrow {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .data-table td {
+            border-bottom: 1px solid #e9edf2;
+            padding: 10px 12px;
+            white-space: nowrap;
+        }
+
+        .data-table tr:hover td {
+            background-color: #f8fafd;
+        }
+
+        .highlight-match {
+            background-color: #ffecb3;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0 3px;
+            color: #b45f06;
+            display: inline-block;
+        }
+
+        /* pagination compact, no extra margin */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 10px 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .pagination button {
+            background-color: #2c6e9e;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 12px;
+        }
+
+        .pagination button:disabled {
+            background-color: #bdd4e8;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-weight: 600;
+            background: #eef2fc;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+        }
+
+        .empty-placeholder {
+            text-align: center;
+            padding: 50px 20px;
+            color: #6c86a0;
+            font-size: 14px;
+        }
+
+        .loading-spinner-local {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #e0e7ef;
+            border-top: 2px solid #2c6e9e;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* responsive adjustments: keep full-screen behavior */
+        @media (max-width: 700px) {
+            .core-header {
+                padding: 8px 12px;
+            }
+            .filter-toolbar {
+                padding: 8px 12px;
+            }
+            .data-table th, .data-table td {
+                padding: 7px 8px;
+                font-size: 11px;
+            }
+            .info-panel {
+                gap: 8px;
+                padding: 4px 12px;
+            }
+        }
+    </style>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<div class="fullscreen-core">
+    <div class="core-header">
+        <div class="title-section">
+            <h1>📦 Product Core View| Homedecor</h1>
+            <p>1001 · 1002 · 1006 · 1007 · 1008 · 1010 · 1011 · UPC · ITEM DESCRIPTION · RETAIL PRICE · UNIT COST</p>
+        </div>
+        <div class="info-panel">
+            <div class="info-item">
+                <span class="info-label">📊 Total</span>
+                <span class="info-value" id="totalRowsDisplay">—</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">🔍 Filtered</span>
+                <span class="info-value" id="filteredCountDisplay">—</span>
+            </div>
+            <div class="last-updated-badge" id="lastUpdatedBadge">
+                🕒 sync: <span id="lastSyncTime">—</span>
+            </div>
+            <div class="admin-note">
+                🔐 read-only • live
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-toolbar">
+        <div class="search-global">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="globalSearchInput" placeholder="Search across all visible columns (UPC, description, price, unit cost...)" autocomplete="off">
+            <button id="clearGlobalSearch" class="clear-search" style="background:transparent;">✖ Clear</button>
+        </div>
+        <div class="filter-stats-badge">
+            ⚡ smart match: plurals & variations
+        </div>
+    </div>
+
+    <div id="statusMessageArea"></div>
+
+    <div class="table-wrapper" id="tableWrapper">
+        <table class="data-table" id="coreDataTable">
+            <thead id="tableHeader"></thead>
+            <tbody id="tableBody">
+                <tr><td colspan="11" class="empty-placeholder">🔄 Loading product data from cloud...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination" id="paginationControls" style="display: none;">
+        <button id="prevPageBtn">◀ Previous</button>
+        <span class="page-info" id="pageInfoSpan">Page 1</span>
+        <button id="nextPageBtn">Next ▶</button>
+    </div>
+</div>
+
+<script>
+    // -------------------- FIREBASE CONFIG (read-only) --------------------
+    const firebaseConfig = {
+        apiKey: "AIzaSyBgQ-NRH_UFKwEt0PybJ3y2zKGvRSqvLoU",
+        authDomain: "portfolio-70f03.firebaseapp.com",
+        databaseURL: "https://portfolio-70f03-default-rtdb.firebaseio.com",
+        projectId: "portfolio-70f03",
+        storageBucket: "portfolio-70f03.firebasestorage.app",
+        messagingSenderId: "815368927704",
+        appId: "1:815368927704:web:119b288294c5b26d2e1aad"
+    };
+    let database;
+    try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
+        console.log("✅ Firebase ready (full-screen core + unit cost)");
+    } catch(e) { console.warn(e); }
+
+    // TARGET COLUMNS (exactly as required + UNIT COST)
+    const TARGET_COLUMNS = [
+        "1001", "1002", "1006", "1007", "1008", "1010", "1011",
+        "UPC", "ITEM DESCRIPTION", "RETAIL PRICE", "UNIT COST"
+    ];
+
+    // normalize & matching
+    function normalizeColumnName(colName) {
+        if (!colName) return "";
+        return colName.toString().trim();
+    }
+
+    // Global state
+    let fullDataset = [];
+    let coreFilteredData = [];
+    let currentPage = 1;
+    const ROWS_PER_PAGE = 100;
+    let currentHeadersMapped = [];
+    let globalSearchText = "";
+    let sortConfig = { columnKey: null, direction: 'asc' };
+    let lastMetadata = null;
+
+    // DOM elements
+    const totalRowsSpan = document.getElementById('totalRowsDisplay');
+    const filteredCountSpan = document.getElementById('filteredCountDisplay');
+    const lastSyncSpan = document.getElementById('lastSyncTime');
+    const globalSearchInput = document.getElementById('globalSearchInput');
+    const clearSearchBtn = document.getElementById('clearGlobalSearch');
+    const tableHeaderElem = document.getElementById('tableHeader');
+    const tableBodyElem = document.getElementById('tableBody');
+    const paginationDiv = document.getElementById('paginationControls');
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    const pageInfoSpan = document.getElementById('pageInfoSpan');
+    const statusArea = document.getElementById('statusMessageArea');
+
+    function showStatusMessage(msg, type = "info") {
+        const div = document.createElement('div');
+        div.className = `status-message status-${type}`;
+        div.innerText = msg;
+        statusArea.innerHTML = '';
+        statusArea.appendChild(div);
+        setTimeout(() => {
+            if (statusArea.firstChild === div) statusArea.innerHTML = '';
+        }, 3800);
+    }
+
+    function formatTimestamp(timestamp) {
+        if (!timestamp) return '—';
+        try {
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short', year: 'numeric' });
+        } catch(e) { return String(timestamp); }
+    }
+
+    // Smart substring matching (plural/suffix hints)
+    function isHintMatch(cellValue, searchTerm) {
+        if (!searchTerm || searchTerm.trim() === "") return true;
+        const cellStr = String(cellValue).toLowerCase().trim();
+        const term = searchTerm.toLowerCase().trim();
+        if (cellStr.includes(term)) return true;
+        if (term.endsWith('s') && term.length > 3) {
+            const singular = term.slice(0, -1);
+            if (singular.length >= 2 && cellStr.includes(singular)) return true;
+        }
+        if (!term.endsWith('s') && term.length > 2) {
+            if (cellStr.includes(term + 's')) return true;
+        }
+        const suffixes = ['ing', 'ed', 'er', 'est', 'ly', 'tion'];
+        for (let suffix of suffixes) {
+            if (term.endsWith(suffix)) {
+                const base = term.slice(0, -suffix.length);
+                if (base.length >= 3 && cellStr.includes(base)) return true;
+            }
+            if (cellStr.includes(term + suffix)) return true;
+        }
+        return false;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function highlightText(cellText, searchTerm) {
+        if (!searchTerm || !cellText) return escapeHtml(String(cellText));
+        const str = String(cellText);
+        const lowerStr = str.toLowerCase();
+        const lowerSearch = searchTerm.toLowerCase();
+        let matchStart = lowerStr.indexOf(lowerSearch);
+        if (matchStart === -1 && lowerSearch.endsWith('s') && lowerSearch.length > 3) {
+            const singular = lowerSearch.slice(0, -1);
+            matchStart = lowerStr.indexOf(singular);
+        } else if (matchStart === -1 && !lowerSearch.endsWith('s') && lowerSearch.length > 2) {
+            matchStart = lowerStr.indexOf(lowerSearch + 's');
+        }
+        if (matchStart !== -1) {
+            const matchEnd = matchStart + (matchStart + lowerSearch.length <= lowerStr.length ? lowerSearch.length : 3);
+            const before = escapeHtml(str.substring(0, matchStart));
+            const matchPart = escapeHtml(str.substring(matchStart, matchEnd));
+            const after = escapeHtml(str.substring(matchEnd));
+            return `${before}<span class="highlight-match">${matchPart}</span>${after}`;
+        }
+        return escapeHtml(str);
+    }
+
+    // apply global filter & sort
+    function applyGlobalSearchAndSort() {
+        if (!fullDataset.length) {
+            coreFilteredData = [];
+            filteredCountSpan.innerText = '0';
+            renderTablePage();
+            updatePaginationUI();
+            return;
+        }
+        let filtered = [...fullDataset];
+        if (globalSearchText.trim() !== "") {
+            filtered = filtered.filter(row => {
+                for (let colKey of currentHeadersMapped) {
+                    let val = row[colKey] !== undefined && row[colKey] !== null ? String(row[colKey]) : "";
+                    if (isHintMatch(val, globalSearchText)) return true;
+                }
+                return false;
+            });
+        }
+        // sorting
+        if (sortConfig.columnKey && currentHeadersMapped.includes(sortConfig.columnKey)) {
+            const col = sortConfig.columnKey;
+            const dir = sortConfig.direction;
+            filtered.sort((a, b) => {
+                let valA = a[col] !== undefined && a[col] !== null ? String(a[col]) : "";
+                let valB = b[col] !== undefined && b[col] !== null ? String(b[col]) : "";
+                let numA = parseFloat(valA), numB = parseFloat(valB);
+                let isNumA = !isNaN(numA) && isFinite(valA) && valA.trim() !== "";
+                let isNumB = !isNaN(numB) && isFinite(valB) && valB.trim() !== "";
+                if (isNumA && isNumB) return dir === 'asc' ? numA - numB : numB - numA;
+                let comp = valA.localeCompare(valB);
+                return dir === 'asc' ? comp : -comp;
+            });
+        }
+        coreFilteredData = filtered;
+        filteredCountSpan.innerText = coreFilteredData.length.toLocaleString();
+        currentPage = 1;
+        renderTablePage();
+        updatePaginationUI();
+    }
+
+    function renderTablePage() {
+        if (!coreFilteredData.length) {
+            const colCount = currentHeadersMapped.length || TARGET_COLUMNS.length;
+            tableBodyElem.innerHTML = `<tr><td colspan="${colCount}" class="empty-placeholder">📭 No products match the search. Try different keywords.</td></tr>`;
+            tableHeaderElem.innerHTML = '';
+            paginationDiv.style.display = 'none';
+            return;
+        }
+        const start = (currentPage - 1) * ROWS_PER_PAGE;
+        const end = Math.min(start + ROWS_PER_PAGE, coreFilteredData.length);
+        const pageRows = coreFilteredData.slice(start, end);
+        
+        // Build header with sort indicators
+        let theadHtml = '<tr>';
+        for (let colKey of currentHeadersMapped) {
+            let displayName = colKey;
+            let sortIndicator = '';
+            if (sortConfig.columnKey === colKey) {
+                sortIndicator = sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+            } else {
+                sortIndicator = ' ↕️';
+            }
+            theadHtml += `<th data-sort-col="${escapeHtml(colKey)}"><span class="th-sort">${escapeHtml(displayName)}<span class="sort-arrow">${sortIndicator}</span></span></th>`;
+        }
+        theadHtml += '</tr>';
+        tableHeaderElem.innerHTML = theadHtml;
+        
+        // attach sort listeners (remove existing to avoid duplicates, then attach fresh)
+        document.querySelectorAll('#tableHeader th').forEach(th => {
+            th.removeEventListener('click', handleSortClick);
+            th.addEventListener('click', handleSortClick);
+        });
+        
+        function handleSortClick(e) {
+            const th = e.currentTarget;
+            const col = th.getAttribute('data-sort-col');
+            if (sortConfig.columnKey === col) {
+                sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortConfig.columnKey = col;
+                sortConfig.direction = 'asc';
+            }
+            applyGlobalSearchAndSort();
+        }
+        
+        let tbodyHtml = '';
+        for (let row of pageRows) {
+            tbodyHtml += '<tr>';
+            for (let colKey of currentHeadersMapped) {
+                let rawVal = row[colKey] !== undefined && row[colKey] !== null ? String(row[colKey]) : "";
+                let displayVal = rawVal.length > 120 ? rawVal.substring(0, 117) + '...' : rawVal;
+                if (globalSearchText.trim() !== "") {
+                    displayVal = highlightText(rawVal, globalSearchText);
+                } else {
+                    displayVal = escapeHtml(displayVal);
+                }
+                tbodyHtml += `<td title="${escapeHtml(rawVal)}">${displayVal}</td>`;
+            }
+            tbodyHtml += '</tr>';
+        }
+        tableBodyElem.innerHTML = tbodyHtml;
+        paginationDiv.style.display = coreFilteredData.length > ROWS_PER_PAGE ? 'flex' : 'none';
+    }
+
+    function updatePaginationUI() {
+        if (!coreFilteredData.length) {
+            paginationDiv.style.display = 'none';
+            return;
+        }
+        const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE);
+        pageInfoSpan.innerText = `Page ${currentPage} of ${totalPages}`;
+        prevBtn.disabled = (currentPage === 1);
+        nextBtn.disabled = (currentPage === totalPages);
+    }
+
+    // Load data from Firebase (latest completed upload)
+    async function loadLatestProductData() {
+        if (!database) {
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Firebase not available</td></tr>`;
+            return;
+        }
+        try {
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder"><span>🔄 Syncing dataset... <span class="loading-spinner-local"></span></span></td></tr>`;
+            const uploadsRef = database.ref('csvUploads');
+            const snapshot = await uploadsRef.once('value');
+            if (!snapshot.exists()) {
+                tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">📭 No product data available. Please ask admin to upload CSV/Excel.</td></tr>`;
+                totalRowsSpan.innerText = '0';
+                filteredCountSpan.innerText = '0';
+                fullDataset = [];
+                coreFilteredData = [];
+                paginationDiv.style.display = 'none';
+                lastSyncSpan.innerText = '—';
+                return;
+            }
+            let latestUpload = null;
+            snapshot.forEach(child => {
+                const val = child.val();
+                if (val.metadata && val.metadata.completed === true) {
+                    if (!latestUpload || (val.metadata.timestamp > latestUpload.metadata.timestamp)) {
+                        latestUpload = { id: child.key, metadata: val.metadata, batches: val.batches || {} };
+                    }
+                }
+            });
+            if (!latestUpload || !latestUpload.batches) {
+                throw new Error("No completed dataset with batches");
+            }
+            const allRows = [];
+            const batches = latestUpload.batches;
+            for (let key of Object.keys(batches)) {
+                if (batches[key] && Array.isArray(batches[key].data)) {
+                    allRows.push(...batches[key].data);
+                }
+            }
+            if (!allRows.length) throw new Error("Dataset contains zero rows");
+            fullDataset = allRows;
+            lastMetadata = latestUpload.metadata;
+            const availableHeaders = fullDataset.length ? Object.keys(fullDataset[0]) : [];
+            
+            // Match target columns with flexible case-insensitive lookup
+            const matchedColumns = [];
+            for (let target of TARGET_COLUMNS) {
+                // Try exact match first, then case-insensitive
+                let foundKey = availableHeaders.find(h => h === target);
+                if (!foundKey) {
+                    foundKey = availableHeaders.find(h => h.toLowerCase() === target.toLowerCase());
+                }
+                if (foundKey) matchedColumns.push(foundKey);
+                else matchedColumns.push(target); // placeholder for missing column
+            }
+            currentHeadersMapped = matchedColumns;
+            totalRowsSpan.innerText = fullDataset.length.toLocaleString();
+            if (lastMetadata && lastMetadata.timestamp) {
+                lastSyncSpan.innerText = formatTimestamp(lastMetadata.timestamp);
+            } else {
+                lastSyncSpan.innerText = new Date().toLocaleString();
+            }
+            globalSearchText = "";
+            if (globalSearchInput) globalSearchInput.value = "";
+            sortConfig = { columnKey: null, direction: 'asc' };
+            applyGlobalSearchAndSort();
+            showStatusMessage(`✅ Loaded ${fullDataset.length.toLocaleString()} products | Core columns + Unit Cost (full-screen)`, "success");
+        } catch (err) {
+            console.error(err);
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Error: ${escapeHtml(err.message)}</td></tr>`;
+            showStatusMessage("Failed to load dataset: " + err.message, "error");
+        }
+    }
+
+    // Event handlers
+    function handleGlobalSearch() {
+        globalSearchText = globalSearchInput.value;
+        applyGlobalSearchAndSort();
+    }
+    function clearGlobalSearch() {
+        globalSearchInput.value = "";
+        globalSearchText = "";
+        applyGlobalSearchAndSort();
+        showStatusMessage("Search cleared", "info");
+    }
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTablePage();
+            updatePaginationUI();
+            const wrapper = document.querySelector('.table-wrapper');
+            if (wrapper) wrapper.scrollTop = 0;
+        }
+    }
+    function nextPage() {
+        const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderTablePage();
+            updatePaginationUI();
+            const wrapper = document.querySelector('.table-wrapper');
+            if (wrapper) wrapper.scrollTop = 0;
+        }
+    }
+
+    if (globalSearchInput) globalSearchInput.addEventListener('input', handleGlobalSearch);
+    if (clearSearchBtn) clearSearchBtn.addEventListener('click', clearGlobalSearch);
+    if (prevBtn) prevBtn.addEventListener('click', prevPage);
+    if (nextBtn) nextBtn.addEventListener('click', nextPage);
+
+    window.addEventListener('load', () => {
+        loadLatestProductData();
+    });
+</script>
+</body>
+</html>
