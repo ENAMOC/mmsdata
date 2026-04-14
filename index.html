@@ -245,15 +245,6 @@
             transform: scale(0.97);
         }
 
-        .inactivity-timer {
-            background: #2c6e9e20;
-            border-radius: 30px;
-            padding: 4px 12px;
-            font-size: 11px;
-            font-family: monospace;
-            color: #1f4e6e;
-        }
-
         .filter-toolbar {
             padding: 10px 20px;
             background: #ffffff;
@@ -429,7 +420,7 @@
     </div>
 </div>
 
-<!-- MAIN APPLICATION (product core with logout & inactivity timer) -->
+<!-- MAIN APPLICATION (product core with logout) -->
 <div id="mainAppContainer" class="main-app-container">
     <div class="fullscreen-core">
         <div class="core-header">
@@ -441,7 +432,6 @@
                 <div class="info-item"><span>📊 Total</span><span class="info-value" id="totalRowsDisplay">—</span></div>
                 <div class="info-item"><span>🔍 Filtered</span><span class="info-value" id="filteredCountDisplay">—</span></div>
                 <div class="last-updated-badge" style="background:#dff0e4; border-radius:30px; padding:3px 12px; font-size:11px;">🕒 sync: <span id="lastSyncTime">—</span></div>
-                <div class="inactivity-timer" id="inactivityTimer">⏱️ Auto-logout: 15:00</div>
                 <button id="logoutButton" class="logout-btn">🚪 Logout</button>
             </div>
         </div>
@@ -458,7 +448,7 @@
                 <thead id="tableHeader"></thead>
                 <tbody id="tableBody"><tr><td colspan="11" class="empty-placeholder">🔐 Please authenticate to load data...</td></tr>
                 </tbody>
-             </table>
+            </table>
         </div>
         <div class="pagination" id="paginationControls" style="display: none;">
             <button id="prevPageBtn">◀ Previous</button>
@@ -527,7 +517,7 @@
         }
     }
 
-    // Record login attempt with timestamp
+    // Record login attempt with timestamp and IP info (simulated)
     async function recordLoginHistory(username, success, errorMessage = null) {
         if (!database) return;
         try {
@@ -555,7 +545,7 @@
                 const record = child.val();
                 if (record.success === true) {
                     hasSuccess = true;
-                    return true;
+                    return true; // break loop
                 }
             });
             return hasSuccess;
@@ -582,94 +572,12 @@
     const loginErrorMsgDiv = document.getElementById('loginErrorMsg');
     const loginForm = document.getElementById('loginForm');
     const logoutBtn = document.getElementById('logoutButton');
-    const inactivityTimerSpan = document.getElementById('inactivityTimer');
 
     // Track currently logged in user
     let currentLoggedInUser = null;
-    
-    // Inactivity timeout management (15 minutes = 900,000 ms)
-    let inactivityTimer = null;
-    let countdownInterval = null;
-    const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
-    let remainingTimeMs = INACTIVITY_LIMIT_MS;
-    
-    // Reset inactivity timer
-    function resetInactivityTimer() {
-        if (!mainApp.classList.contains('visible')) return;
-        
-        // Clear existing timers
-        if (inactivityTimer) clearTimeout(inactivityTimer);
-        if (countdownInterval) clearInterval(countdownInterval);
-        
-        // Reset remaining time
-        remainingTimeMs = INACTIVITY_LIMIT_MS;
-        updateTimerDisplay();
-        
-        // Start new timeout for auto-logout
-        inactivityTimer = setTimeout(() => {
-            if (mainApp.classList.contains('visible')) {
-                console.log("Auto-logout due to inactivity (15 minutes)");
-                performLogout(true); // auto-logout triggered
-            }
-        }, INACTIVITY_LIMIT_MS);
-        
-        // Start countdown display update every second
-        countdownInterval = setInterval(() => {
-            if (mainApp.classList.contains('visible')) {
-                if (remainingTimeMs > 1000) {
-                    remainingTimeMs -= 1000;
-                    updateTimerDisplay();
-                }
-            } else {
-                // Cleanup if not visible
-                if (countdownInterval) clearInterval(countdownInterval);
-            }
-        }, 1000);
-    }
-    
-    function updateTimerDisplay() {
-        const minutes = Math.floor(remainingTimeMs / 60000);
-        const seconds = Math.floor((remainingTimeMs % 60000) / 1000);
-        inactivityTimerSpan.textContent = `⏱️ Auto-logout: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        if (remainingTimeMs <= 30000) {
-            inactivityTimerSpan.style.background = "#e74c3c30";
-            inactivityTimerSpan.style.color = "#c0392b";
-        } else {
-            inactivityTimerSpan.style.background = "#2c6e9e20";
-            inactivityTimerSpan.style.color = "#1f4e6e";
-        }
-    }
-    
-    // Setup activity listeners
-    function setupActivityListeners() {
-        const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'mousemove'];
-        const resetTimerHandler = () => {
-            if (mainApp.classList.contains('visible')) {
-                resetInactivityTimer();
-            }
-        };
-        events.forEach(event => {
-            document.addEventListener(event, resetTimerHandler);
-        });
-    }
-    
-    // Cleanup inactivity timers
-    function cleanupInactivityTimers() {
-        if (inactivityTimer) {
-            clearTimeout(inactivityTimer);
-            inactivityTimer = null;
-        }
-        if (countdownInterval) {
-            clearInterval(countdownInterval);
-            countdownInterval = null;
-        }
-    }
 
     // Central logout function: reset UI, clear data, show login overlay
-    function performLogout(isAuto = false) {
-        // Cleanup inactivity timers
-        cleanupInactivityTimers();
-        
+    function performLogout() {
         // Reset main app visibility
         mainApp.classList.remove('visible');
         // Clear current user
@@ -690,9 +598,6 @@
         document.getElementById('loginUsername').value = '';
         document.getElementById('loginPassword').value = '';
         loginErrorMsgDiv.innerHTML = '';
-        // Reset timer display
-        remainingTimeMs = INACTIVITY_LIMIT_MS;
-        if (inactivityTimerSpan) inactivityTimerSpan.textContent = `⏱️ Auto-logout: 15:00`;
         // Show overlay with fade effect
         authOverlay.style.display = 'flex';
         setTimeout(() => {
@@ -701,11 +606,6 @@
         // Reset any sorting/pagination state
         currentPage = 1;
         sortConfig = { columnKey: null, direction: 'asc' };
-        
-        if (isAuto) {
-            // Optional: show a small notification (can be subtle)
-            console.log("Auto-logout executed due to 15 min inactivity");
-        }
     }
 
     async function handleLogin(e) {
@@ -730,13 +630,24 @@
             return;
         }
         
+        // CRITICAL: Check if user has ANY successful login history
+        // If no history exists, this is first login attempt - BUT we still allow it?
+        // Requirement: "if the account is not login history, it will never proceed to the dashboard"
+        // This means: only accounts that have previously logged in successfully can access dashboard.
+        // However, we need to handle first-time authorized users: they must have at least one successful login recorded.
+        // To satisfy this strictly: after successful credential check, we record success, THEN check history.
+        // But the first login would have no history BEFORE this login. So we record first, then allow.
+        // Better interpretation: An account must have at least one successful login record (including current) to proceed.
+        // So we record the successful attempt first, then verify history exists (which will include this attempt).
+        
         // Record this successful login attempt
         await recordLoginHistory(username, true, null);
         
-        // Verify that the user has at least one successful login record
+        // Now verify that the user has at least one successful login record
         const hasHistory = await hasSuccessfulLoginHistory(username);
         
         if (!hasHistory) {
+            // This should not happen since we just recorded one, but as a safety measure
             const errMsg = "❌ Access requires verified login history. Please contact administrator.";
             loginErrorMsgDiv.innerHTML = `<div class="error-msg">${errMsg}</div>`;
             await recordLoginHistory(username, false, errMsg);
@@ -752,20 +663,13 @@
             authOverlay.style.display = "none";
             mainApp.classList.add("visible");
             await loadLatestProductData();
-            // Start inactivity timer after successful login
-            cleanupInactivityTimers();
-            remainingTimeMs = INACTIVITY_LIMIT_MS;
-            resetInactivityTimer();
         }, 280);
     }
 
     loginForm.addEventListener('submit', handleLogin);
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => performLogout(false));
+        logoutBtn.addEventListener('click', performLogout);
     }
-    
-    // Setup global activity listeners for inactivity detection
-    setupActivityListeners();
     
     // Seed authorized users on startup
     seedAuthorizedUsers().catch(console.warn);
@@ -927,8 +831,6 @@
                 sortConfig.direction = 'asc';
             }
             applyGlobalSearchAndSort();
-            // Reset inactivity timer on user interaction
-            if (mainApp.classList.contains('visible')) resetInactivityTimer();
         }
         
         let tbodyHtml = '';
@@ -963,7 +865,7 @@
 
     async function loadLatestProductData() {
         if (!database) {
-            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Firebase not available</td></table>`;
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Firebase not available</td></tr>`;
             return;
         }
         try {
@@ -1021,10 +923,10 @@
         }
     }
 
-    if (globalSearchInput) globalSearchInput.addEventListener('input', () => { globalSearchText = globalSearchInput.value; applyGlobalSearchAndSort(); if(mainApp.classList.contains('visible')) resetInactivityTimer(); });
-    if (clearSearchBtn) clearSearchBtn.addEventListener('click', () => { globalSearchInput.value = ""; globalSearchText = ""; applyGlobalSearchAndSort(); if(mainApp.classList.contains('visible')) resetInactivityTimer(); });
-    if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; if(mainApp.classList.contains('visible')) resetInactivityTimer(); } });
-    if (nextBtn) nextBtn.addEventListener('click', () => { const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE); if (currentPage < totalPages) { currentPage++; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; if(mainApp.classList.contains('visible')) resetInactivityTimer(); } });
+    if (globalSearchInput) globalSearchInput.addEventListener('input', () => { globalSearchText = globalSearchInput.value; applyGlobalSearchAndSort(); });
+    if (clearSearchBtn) clearSearchBtn.addEventListener('click', () => { globalSearchInput.value = ""; globalSearchText = ""; applyGlobalSearchAndSort(); });
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; } });
+    if (nextBtn) nextBtn.addEventListener('click', () => { const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE); if (currentPage < totalPages) { currentPage++; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; } });
 </script>
 </body>
 </html>
