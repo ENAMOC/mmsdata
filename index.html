@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Homedecor Portal | Secure Access</title>
+    <style>
+        /* RESET & GLOBAL */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #eef2f7;
+            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        /* LOGIN OVERLAY (NO REGISTRATION) */
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(25, 45, 60, 0.94);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: opacity 0.35s ease;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 36px;
+            width: 90%;
+            max-width: 460px;
+            padding: 32px 28px 38px;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: fadeSlideUp 0.4s ease;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-icon {
+            font-size: 56px;
+            margin-bottom: 10px;
+        }
+
+        .auth-card h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1f4e6e, #0f2c40);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .auth-sub {
+            color: #4a627a;
+            font-size: 12px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid #e9edf2;
+            display: inline-block;
+            padding-bottom: 6px;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1f3b4c;
+            display: block;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 60px;
+            background: #fefefe;
+            transition: all 0.2s;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .input-group input:focus {
+            border-color: #2c6e9e;
+            box-shadow: 0 0 0 3px rgba(44,110,158,0.2);
+            background: white;
+        }
+
+        .auth-btn {
+            width: 100%;
+            background: linear-gradient(105deg, #1f5e7e, #0f3b52);
+            border: none;
+            border-radius: 60px;
+            padding: 12px 18px;
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+        }
+
+        .auth-btn:hover {
+            background: linear-gradient(105deg, #0f4a64, #0a2e40);
+            transform: scale(0.98);
+        }
+
+        .error-msg {
+            background: #ffe9e8;
+            color: #c23d2e;
+            padding: 10px 14px;
+            border-radius: 60px;
+            font-size: 12px;
+            margin-top: 16px;
+            font-weight: 500;
+        }
+
+        .admin-badge {
+            background: #fef4e8;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 11px;
+            color: #b45f06;
+            margin-top: 12px;
+        }
+
+        /* Main app container */
+        .main-app-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.25s ease;
+        }
+
+        .main-app-container.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .fullscreen-core {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            background: white;
+            overflow: hidden;
+        }
+
+        .core-header {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafd 100%);
+            border-bottom: 1px solid #e2e9f2;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .title-section h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            background: linear-gradient(145deg, #1f4e6e, #0f2c40);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .title-section p {
+            font-size: 11px;
+            color: #4a627a;
+        }
+
+        .info-panel {
+            background: #eef2fc;
+            padding: 5px 16px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .info-value {
+            color: #1f3b4c;
+            font-weight: 700;
+            background: white;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-family: monospace;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 18px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .logout-btn:hover {
+            background: #c0392b;
+            transform: scale(0.97);
+        }
+
+        .inactivity-timer {
+            background: #2c6e9e20;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #1f4e6e;
+        }
+
+        .filter-toolbar {
+            padding: 10px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #e9edf2;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .search-global {
+            display: flex;
+            align-items: center;
+            background: #f1f5f9;
+            border-radius: 60px;
+            padding: 4px 14px;
+            gap: 8px;
+            flex: 2;
+            min-width: 240px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .search-global input {
+            border: none;
+            background: transparent;
+            padding: 8px 0;
+            font-size: 13px;
+            width: 100%;
+            outline: none;
+        }
+
+        .clear-search {
+            background: none;
+            border: none;
+            color: #c7452c;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 30px;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: auto;
+            width: 100%;
+            scrollbar-width: thin;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            background: #1f3b4c;
+            color: white;
+            padding: 11px 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .data-table td {
+            border-bottom: 1px solid #e9edf2;
+            padding: 10px 12px;
+            white-space: nowrap;
+        }
+
+        .data-table tr:hover td {
+            background-color: #f8fafd;
+        }
+
+        .highlight-match {
+            background-color: #ffecb3;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 0 3px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 10px 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .pagination button {
+            background-color: #2c6e9e;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 20px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .pagination button:disabled {
+            background-color: #bdd4e8;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            background: #eef2fc;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+        }
+
+        .empty-placeholder {
+            text-align: center;
+            padding: 50px;
+            color: #6c86a0;
+        }
+
+        .loading-spinner-local {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #e0e7ef;
+            border-top: 2px solid #2c6e9e;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 700px) {
+            .core-header, .filter-toolbar { padding: 8px 12px; }
+            .data-table th, .data-table td { padding: 7px 8px; font-size: 11px; }
+        }
+    </style>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- AUTHENTICATION OVERLAY (ONLY LOGIN - NO REGISTRATION) -->
+<div id="authOverlay" class="auth-overlay">
+    <div class="auth-card" id="authCard">
+        <div id="loginFormContainer">
+            <div class="auth-icon">🔐</div>
+            <h2>Homedecor Portal</h2>
+            <div class="auth-sub">secure access · product core</div>
+            <form id="loginForm" action="javascript:void(0);">
+                <div class="input-group">
+                    <label>👤 Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••">
+                </div>
+                <button type="submit" class="auth-btn">➤ Access Dashboard</button>
+                <div id="loginErrorMsg" style="min-height: 48px;"></div>
+                <div class="admin-badge">🔒 Authorized personnel only</div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APPLICATION (product core with logout & inactivity timer) -->
+<div id="mainAppContainer" class="main-app-container">
+    <div class="fullscreen-core">
+        <div class="core-header">
+            <div class="title-section">
+                <h1>📦 Product Core | Homedecor</h1>
+                <p>UPC · ITEM DESCRIPTION · RETAIL PRICE · UNIT COST</p>
+            </div>
+            <div class="info-panel">
+                <div class="info-item"><span>📊 Total</span><span class="info-value" id="totalRowsDisplay">—</span></div>
+                <div class="info-item"><span>🔍 Filtered</span><span class="info-value" id="filteredCountDisplay">—</span></div>
+                <div class="last-updated-badge" style="background:#dff0e4; border-radius:30px; padding:3px 12px; font-size:11px;">🕒 sync: <span id="lastSyncTime">—</span></div>
+                <div class="inactivity-timer" id="inactivityTimer">⏱️ Auto-logout: 15:00</div>
+                <button id="logoutButton" class="logout-btn">🚪 Logout</button>
+            </div>
+        </div>
+        <div class="filter-toolbar">
+            <div class="search-global">
+                <span>🔍</span>
+                <input type="text" id="globalSearchInput" placeholder="Search across products (UPC, description, price...)" autocomplete="off">
+                <button id="clearGlobalSearch" class="clear-search">✖ Clear</button>
+            </div>
+            <div class="filter-stats-badge" style="background:#eef2fa; border-radius:32px; padding:4px 14px; font-size:11px;">⚡ smart match</div>
+        </div>
+        <div class="table-wrapper" id="tableWrapper">
+            <table class="data-table" id="coreDataTable">
+                <thead id="tableHeader"></thead>
+                <tbody id="tableBody"><tr><td colspan="11" class="empty-placeholder">🔐 Please authenticate to load data...</td></tr>
+                </tbody>
+             </table>
+        </div>
+        <div class="pagination" id="paginationControls" style="display: none;">
+            <button id="prevPageBtn">◀ Previous</button>
+            <span class="page-info" id="pageInfoSpan">Page 1</span>
+            <button id="nextPageBtn">Next ▶</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // -------------------- FIREBASE INIT --------------------
+    const firebaseConfig = {
+        apiKey: "AIzaSyBgQ-NRH_UFKwEt0PybJ3y2zKGvRSqvLoU",
+        authDomain: "portfolio-70f03.firebaseapp.com",
+        databaseURL: "https://portfolio-70f03-default-rtdb.firebaseio.com",
+        projectId: "portfolio-70f03",
+        storageBucket: "portfolio-70f03.firebasestorage.app",
+        messagingSenderId: "815368927704",
+        appId: "1:815368927704:web:119b288294c5b26d2e1aad"
+    };
+    let database;
+    try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
+        console.log("✅ Firebase ready");
+    } catch(e) { console.warn(e); }
+
+    // -------------------- AUTHENTICATION SYSTEM (NO REGISTRATION) --------------------
+    const USERS_REF = () => database.ref('portalUsers');
+    const LOGIN_HISTORY_REF = () => database.ref('loginHistory');
+    
+    // Predefined allowed users (admin only - no public signup)
+    const AUTHORIZED_USERS = [
+        { username: "admin", password: "homedecor2025", role: "admin" },
+        { username: "viewer", password: "view123", role: "viewer" }
+    ];
+
+    // Seed ONLY the predefined users into Firebase (no dynamic creation allowed)
+    async function seedAuthorizedUsers() {
+        if (!database) return;
+        const usersRef = USERS_REF();
+        const snapshot = await usersRef.once('value');
+        if (!snapshot.exists()) {
+            for (const user of AUTHORIZED_USERS) {
+                await usersRef.child(user.username).set({
+                    username: user.username,
+                    password: user.password,
+                    role: user.role,
+                    createdAt: Date.now(),
+                    createdBySystem: true
+                });
+            }
+            console.log("✅ Seeded authorized users (admin/viewer)");
+        } else {
+            for (const user of AUTHORIZED_USERS) {
+                if (!snapshot.hasChild(user.username)) {
+                    await usersRef.child(user.username).set({
+                        username: user.username,
+                        password: user.password,
+                        role: user.role,
+                        createdAt: Date.now(),
+                        createdBySystem: true
+                    });
+                }
+            }
+        }
+    }
+
+    // Record login attempt with timestamp
+    async function recordLoginHistory(username, success, errorMessage = null) {
+        if (!database) return;
+        try {
+            const historyRef = LOGIN_HISTORY_REF().push();
+            await historyRef.set({
+                username: username,
+                timestamp: Date.now(),
+                success: success,
+                errorMessage: errorMessage,
+                userAgent: navigator.userAgent.substring(0, 200),
+                sessionId: Math.random().toString(36).substring(2, 15)
+            });
+        } catch(e) { console.warn("History log failed:", e); }
+    }
+
+    // Check if user has any successful login history (required to proceed)
+    async function hasSuccessfulLoginHistory(username) {
+        if (!database) return false;
+        try {
+            const historyRef = LOGIN_HISTORY_REF();
+            const snapshot = await historyRef.orderByChild('username').equalTo(username).once('value');
+            if (!snapshot.exists()) return false;
+            let hasSuccess = false;
+            snapshot.forEach(child => {
+                const record = child.val();
+                if (record.success === true) {
+                    hasSuccess = true;
+                    return true;
+                }
+            });
+            return hasSuccess;
+        } catch(e) {
+            console.warn("Check history failed:", e);
+            return false;
+        }
+    }
+
+    async function verifyCredentials(username, password) {
+        if (!database) return false;
+        const userRef = USERS_REF().child(username);
+        const snap = await userRef.once('value');
+        if (snap.exists()) {
+            const userData = snap.val();
+            if (userData.password === password) return true;
+        }
+        return false;
+    }
+
+    // -------------------- UI & LOGIN HANDLER --------------------
+    const authOverlay = document.getElementById('authOverlay');
+    const mainApp = document.getElementById('mainAppContainer');
+    const loginErrorMsgDiv = document.getElementById('loginErrorMsg');
+    const loginForm = document.getElementById('loginForm');
+    const logoutBtn = document.getElementById('logoutButton');
+    const inactivityTimerSpan = document.getElementById('inactivityTimer');
+
+    // Track currently logged in user
+    let currentLoggedInUser = null;
+    
+    // Inactivity timeout management (15 minutes = 900,000 ms)
+    let inactivityTimer = null;
+    let countdownInterval = null;
+    const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+    let remainingTimeMs = INACTIVITY_LIMIT_MS;
+    
+    // Reset inactivity timer
+    function resetInactivityTimer() {
+        if (!mainApp.classList.contains('visible')) return;
+        
+        // Clear existing timers
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        if (countdownInterval) clearInterval(countdownInterval);
+        
+        // Reset remaining time
+        remainingTimeMs = INACTIVITY_LIMIT_MS;
+        updateTimerDisplay();
+        
+        // Start new timeout for auto-logout
+        inactivityTimer = setTimeout(() => {
+            if (mainApp.classList.contains('visible')) {
+                console.log("Auto-logout due to inactivity (15 minutes)");
+                performLogout(true); // auto-logout triggered
+            }
+        }, INACTIVITY_LIMIT_MS);
+        
+        // Start countdown display update every second
+        countdownInterval = setInterval(() => {
+            if (mainApp.classList.contains('visible')) {
+                if (remainingTimeMs > 1000) {
+                    remainingTimeMs -= 1000;
+                    updateTimerDisplay();
+                }
+            } else {
+                // Cleanup if not visible
+                if (countdownInterval) clearInterval(countdownInterval);
+            }
+        }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+        const minutes = Math.floor(remainingTimeMs / 60000);
+        const seconds = Math.floor((remainingTimeMs % 60000) / 1000);
+        inactivityTimerSpan.textContent = `⏱️ Auto-logout: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if (remainingTimeMs <= 30000) {
+            inactivityTimerSpan.style.background = "#e74c3c30";
+            inactivityTimerSpan.style.color = "#c0392b";
+        } else {
+            inactivityTimerSpan.style.background = "#2c6e9e20";
+            inactivityTimerSpan.style.color = "#1f4e6e";
+        }
+    }
+    
+    // Setup activity listeners
+    function setupActivityListeners() {
+        const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'mousemove'];
+        const resetTimerHandler = () => {
+            if (mainApp.classList.contains('visible')) {
+                resetInactivityTimer();
+            }
+        };
+        events.forEach(event => {
+            document.addEventListener(event, resetTimerHandler);
+        });
+    }
+    
+    // Cleanup inactivity timers
+    function cleanupInactivityTimers() {
+        if (inactivityTimer) {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = null;
+        }
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+    }
+
+    // Central logout function: reset UI, clear data, show login overlay
+    function performLogout(isAuto = false) {
+        // Cleanup inactivity timers
+        cleanupInactivityTimers();
+        
+        // Reset main app visibility
+        mainApp.classList.remove('visible');
+        // Clear current user
+        currentLoggedInUser = null;
+        // Clear any displayed product data
+        fullDataset = [];
+        coreFilteredData = [];
+        currentHeadersMapped = [];
+        globalSearchText = "";
+        if (globalSearchInput) globalSearchInput.value = "";
+        tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">🔐 Session ended. Please log in again.</td></tr>`;
+        tableHeaderElem.innerHTML = '';
+        totalRowsSpan.innerText = '—';
+        filteredCountSpan.innerText = '—';
+        lastSyncSpan.innerText = '—';
+        paginationDiv.style.display = 'none';
+        // Clear login form fields and errors for fresh login
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        loginErrorMsgDiv.innerHTML = '';
+        // Reset timer display
+        remainingTimeMs = INACTIVITY_LIMIT_MS;
+        if (inactivityTimerSpan) inactivityTimerSpan.textContent = `⏱️ Auto-logout: 15:00`;
+        // Show overlay with fade effect
+        authOverlay.style.display = 'flex';
+        setTimeout(() => {
+            authOverlay.style.opacity = '1';
+        }, 10);
+        // Reset any sorting/pagination state
+        currentPage = 1;
+        sortConfig = { columnKey: null, direction: 'asc' };
+        
+        if (isAuto) {
+            // Optional: show a small notification (can be subtle)
+            console.log("Auto-logout executed due to 15 min inactivity");
+        }
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+        const password = document.getElementById('loginPassword').value;
+        
+        if (!username || !password) {
+            const errMsg = "⚠️ Please enter both username and password";
+            loginErrorMsgDiv.innerHTML = `<div class="error-msg">${errMsg}</div>`;
+            await recordLoginHistory(username, false, errMsg);
+            return;
+        }
+        
+        // Verify credentials against Firebase
+        const isValid = await verifyCredentials(username, password);
+        
+        if (!isValid) {
+            const errMsg = "❌ Access denied. Invalid credentials.";
+            loginErrorMsgDiv.innerHTML = `<div class="error-msg">${errMsg}</div>`;
+            await recordLoginHistory(username, false, errMsg);
+            return;
+        }
+        
+        // Record this successful login attempt
+        await recordLoginHistory(username, true, null);
+        
+        // Verify that the user has at least one successful login record
+        const hasHistory = await hasSuccessfulLoginHistory(username);
+        
+        if (!hasHistory) {
+            const errMsg = "❌ Access requires verified login history. Please contact administrator.";
+            loginErrorMsgDiv.innerHTML = `<div class="error-msg">${errMsg}</div>`;
+            await recordLoginHistory(username, false, errMsg);
+            return;
+        }
+        
+        // Store current user
+        currentLoggedInUser = username;
+        
+        // Success: hide overlay and show main app
+        authOverlay.style.opacity = "0";
+        setTimeout(async () => {
+            authOverlay.style.display = "none";
+            mainApp.classList.add("visible");
+            await loadLatestProductData();
+            // Start inactivity timer after successful login
+            cleanupInactivityTimers();
+            remainingTimeMs = INACTIVITY_LIMIT_MS;
+            resetInactivityTimer();
+        }, 280);
+    }
+
+    loginForm.addEventListener('submit', handleLogin);
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => performLogout(false));
+    }
+    
+    // Setup global activity listeners for inactivity detection
+    setupActivityListeners();
+    
+    // Seed authorized users on startup
+    seedAuthorizedUsers().catch(console.warn);
+
+    // -------------------- PRODUCT CORE LOGIC (fully functional) --------------------
+    const TARGET_COLUMNS = [
+        "1001", "1002", "1006", "1007", "1008", "1010", "1011",
+        "UPC", "ITEM DESCRIPTION", "RETAIL PRICE", "UNIT COST"
+    ];
+
+    let fullDataset = [];
+    let coreFilteredData = [];
+    let currentPage = 1;
+    const ROWS_PER_PAGE = 100;
+    let currentHeadersMapped = [];
+    let globalSearchText = "";
+    let sortConfig = { columnKey: null, direction: 'asc' };
+    let lastMetadata = null;
+
+    const totalRowsSpan = document.getElementById('totalRowsDisplay');
+    const filteredCountSpan = document.getElementById('filteredCountDisplay');
+    const lastSyncSpan = document.getElementById('lastSyncTime');
+    const globalSearchInput = document.getElementById('globalSearchInput');
+    const clearSearchBtn = document.getElementById('clearGlobalSearch');
+    const tableHeaderElem = document.getElementById('tableHeader');
+    const tableBodyElem = document.getElementById('tableBody');
+    const paginationDiv = document.getElementById('paginationControls');
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    const pageInfoSpan = document.getElementById('pageInfoSpan');
+
+    function formatTimestamp(timestamp) {
+        if (!timestamp) return '—';
+        try {
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short', year: 'numeric' });
+        } catch(e) { return String(timestamp); }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function isHintMatch(cellValue, searchTerm) {
+        if (!searchTerm || searchTerm.trim() === "") return true;
+        const cellStr = String(cellValue).toLowerCase().trim();
+        const term = searchTerm.toLowerCase().trim();
+        if (cellStr.includes(term)) return true;
+        if (term.endsWith('s') && term.length > 3) {
+            const singular = term.slice(0, -1);
+            if (singular.length >= 2 && cellStr.includes(singular)) return true;
+        }
+        if (!term.endsWith('s') && term.length > 2) {
+            if (cellStr.includes(term + 's')) return true;
+        }
+        return false;
+    }
+
+    function highlightText(cellText, searchTerm) {
+        if (!searchTerm || !cellText) return escapeHtml(String(cellText));
+        const str = String(cellText);
+        const lowerStr = str.toLowerCase();
+        const lowerSearch = searchTerm.toLowerCase();
+        let matchStart = lowerStr.indexOf(lowerSearch);
+        if (matchStart === -1 && lowerSearch.endsWith('s') && lowerSearch.length > 3) {
+            matchStart = lowerStr.indexOf(lowerSearch.slice(0, -1));
+        }
+        if (matchStart !== -1) {
+            const before = escapeHtml(str.substring(0, matchStart));
+            const matchPart = escapeHtml(str.substring(matchStart, matchStart + lowerSearch.length));
+            const after = escapeHtml(str.substring(matchStart + lowerSearch.length));
+            return `${before}<span class="highlight-match">${matchPart}</span>${after}`;
+        }
+        return escapeHtml(str);
+    }
+
+    function applyGlobalSearchAndSort() {
+        if (!fullDataset.length) {
+            coreFilteredData = [];
+            filteredCountSpan.innerText = '0';
+            renderTablePage();
+            updatePaginationUI();
+            return;
+        }
+        let filtered = [...fullDataset];
+        if (globalSearchText.trim() !== "") {
+            filtered = filtered.filter(row => {
+                for (let colKey of currentHeadersMapped) {
+                    let val = row[colKey] !== undefined && row[colKey] !== null ? String(row[colKey]) : "";
+                    if (isHintMatch(val, globalSearchText)) return true;
+                }
+                return false;
+            });
+        }
+        if (sortConfig.columnKey && currentHeadersMapped.includes(sortConfig.columnKey)) {
+            const col = sortConfig.columnKey;
+            const dir = sortConfig.direction;
+            filtered.sort((a, b) => {
+                let valA = a[col] !== undefined && a[col] !== null ? String(a[col]) : "";
+                let valB = b[col] !== undefined && b[col] !== null ? String(b[col]) : "";
+                let numA = parseFloat(valA), numB = parseFloat(valB);
+                let isNumA = !isNaN(numA) && valA.trim() !== "";
+                let isNumB = !isNaN(numB) && valB.trim() !== "";
+                if (isNumA && isNumB) return dir === 'asc' ? numA - numB : numB - numA;
+                return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+        }
+        coreFilteredData = filtered;
+        filteredCountSpan.innerText = coreFilteredData.length.toLocaleString();
+        currentPage = 1;
+        renderTablePage();
+        updatePaginationUI();
+    }
+
+    function renderTablePage() {
+        if (!coreFilteredData.length) {
+            const colCount = currentHeadersMapped.length || TARGET_COLUMNS.length;
+            tableBodyElem.innerHTML = `<tr><td colspan="${colCount}" class="empty-placeholder">📭 No products match the search. Try different keywords.</td></tr>`;
+            tableHeaderElem.innerHTML = '';
+            paginationDiv.style.display = 'none';
+            return;
+        }
+        const start = (currentPage - 1) * ROWS_PER_PAGE;
+        const end = Math.min(start + ROWS_PER_PAGE, coreFilteredData.length);
+        const pageRows = coreFilteredData.slice(start, end);
+        
+        let theadHtml = '<tr>';
+        for (let colKey of currentHeadersMapped) {
+            let displayName = colKey;
+            let sortIndicator = '';
+            if (sortConfig.columnKey === colKey) {
+                sortIndicator = sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+            } else {
+                sortIndicator = ' ↕️';
+            }
+            theadHtml += `<th data-sort-col="${escapeHtml(colKey)}"><span class="th-sort">${escapeHtml(displayName)}<span class="sort-arrow">${sortIndicator}</span></span></th>`;
+        }
+        theadHtml += '</tr>';
+        tableHeaderElem.innerHTML = theadHtml;
+        
+        document.querySelectorAll('#tableHeader th').forEach(th => {
+            th.removeEventListener('click', handleSortClick);
+            th.addEventListener('click', handleSortClick);
+        });
+        
+        function handleSortClick(e) {
+            const th = e.currentTarget;
+            const col = th.getAttribute('data-sort-col');
+            if (sortConfig.columnKey === col) {
+                sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortConfig.columnKey = col;
+                sortConfig.direction = 'asc';
+            }
+            applyGlobalSearchAndSort();
+            // Reset inactivity timer on user interaction
+            if (mainApp.classList.contains('visible')) resetInactivityTimer();
+        }
+        
+        let tbodyHtml = '';
+        for (let row of pageRows) {
+            tbodyHtml += '<tr>';
+            for (let colKey of currentHeadersMapped) {
+                let rawVal = row[colKey] !== undefined && row[colKey] !== null ? String(row[colKey]) : "";
+                let displayVal = rawVal.length > 120 ? rawVal.substring(0, 117) + '...' : rawVal;
+                if (globalSearchText.trim() !== "") {
+                    displayVal = highlightText(rawVal, globalSearchText);
+                } else {
+                    displayVal = escapeHtml(displayVal);
+                }
+                tbodyHtml += `<td title="${escapeHtml(rawVal)}">${displayVal}</td>`;
+            }
+            tbodyHtml += '</tr>';
+        }
+        tableBodyElem.innerHTML = tbodyHtml;
+        paginationDiv.style.display = coreFilteredData.length > ROWS_PER_PAGE ? 'flex' : 'none';
+    }
+
+    function updatePaginationUI() {
+        if (!coreFilteredData.length) {
+            paginationDiv.style.display = 'none';
+            return;
+        }
+        const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE);
+        pageInfoSpan.innerText = `Page ${currentPage} of ${totalPages}`;
+        prevBtn.disabled = (currentPage === 1);
+        nextBtn.disabled = (currentPage === totalPages);
+    }
+
+    async function loadLatestProductData() {
+        if (!database) {
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Firebase not available</td></table>`;
+            return;
+        }
+        try {
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder"><span>🔄 Syncing dataset... <span class="loading-spinner-local"></span></span></td></tr>`;
+            const uploadsRef = database.ref('csvUploads');
+            const snapshot = await uploadsRef.once('value');
+            if (!snapshot.exists()) {
+                tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">📭 No product data available. Please ask admin to upload CSV/Excel.</td></tr>`;
+                totalRowsSpan.innerText = '0';
+                filteredCountSpan.innerText = '0';
+                fullDataset = [];
+                coreFilteredData = [];
+                paginationDiv.style.display = 'none';
+                lastSyncSpan.innerText = '—';
+                return;
+            }
+            let latestUpload = null;
+            snapshot.forEach(child => {
+                const val = child.val();
+                if (val.metadata && val.metadata.completed === true) {
+                    if (!latestUpload || (val.metadata.timestamp > latestUpload.metadata.timestamp)) {
+                        latestUpload = { id: child.key, metadata: val.metadata, batches: val.batches || {} };
+                    }
+                }
+            });
+            if (!latestUpload || !latestUpload.batches) throw new Error("No completed dataset with batches");
+            const allRows = [];
+            const batches = latestUpload.batches;
+            for (let key of Object.keys(batches)) {
+                if (batches[key] && Array.isArray(batches[key].data)) {
+                    allRows.push(...batches[key].data);
+                }
+            }
+            if (!allRows.length) throw new Error("Dataset contains zero rows");
+            fullDataset = allRows;
+            lastMetadata = latestUpload.metadata;
+            const availableHeaders = fullDataset.length ? Object.keys(fullDataset[0]) : [];
+            const matchedColumns = [];
+            for (let target of TARGET_COLUMNS) {
+                let foundKey = availableHeaders.find(h => h === target);
+                if (!foundKey) foundKey = availableHeaders.find(h => h.toLowerCase() === target.toLowerCase());
+                if (foundKey) matchedColumns.push(foundKey);
+                else matchedColumns.push(target);
+            }
+            currentHeadersMapped = matchedColumns;
+            totalRowsSpan.innerText = fullDataset.length.toLocaleString();
+            lastSyncSpan.innerText = lastMetadata && lastMetadata.timestamp ? formatTimestamp(lastMetadata.timestamp) : new Date().toLocaleString();
+            globalSearchText = "";
+            if (globalSearchInput) globalSearchInput.value = "";
+            sortConfig = { columnKey: null, direction: 'asc' };
+            applyGlobalSearchAndSort();
+        } catch (err) {
+            console.error(err);
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Error: ${escapeHtml(err.message)}</td></tr>`;
+        }
+    }
+
+    if (globalSearchInput) globalSearchInput.addEventListener('input', () => { globalSearchText = globalSearchInput.value; applyGlobalSearchAndSort(); if(mainApp.classList.contains('visible')) resetInactivityTimer(); });
+    if (clearSearchBtn) clearSearchBtn.addEventListener('click', () => { globalSearchInput.value = ""; globalSearchText = ""; applyGlobalSearchAndSort(); if(mainApp.classList.contains('visible')) resetInactivityTimer(); });
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; if(mainApp.classList.contains('visible')) resetInactivityTimer(); } });
+    if (nextBtn) nextBtn.addEventListener('click', () => { const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE); if (currentPage < totalPages) { currentPage++; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; if(mainApp.classList.contains('visible')) resetInactivityTimer(); } });
+</script>
+</body>
+</html>
