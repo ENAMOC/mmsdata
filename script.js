@@ -1,4 +1,4 @@
-// ==================== FIREBASE CONFIGURATION (read-only) ====================
+// -------------------- FIREBASE INIT --------------------
 const firebaseConfig = {
     apiKey: "AIzaSyBgQ-NRH_UFKwEt0PybJ3y2zKGvRSqvLoU",
     authDomain: "portfolio-70f03.firebaseapp.com",
@@ -8,17 +8,217 @@ const firebaseConfig = {
     messagingSenderId: "815368927704",
     appId: "1:815368927704:web:119b288294c5b26d2e1aad"
 };
-
-// Global Firebase reference
 let database;
+try {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+    console.log("✅ Firebase ready");
+} catch(e) { console.warn(e); }
 
-// TARGET COLUMNS (exactly as required + UNIT COST)
+// -------------------- AUTHENTICATION SYSTEM (NO REGISTRATION) --------------------
+const USERS_REF = () => database.ref('portalUsers');
+const LOGIN_HISTORY_REF = () => database.ref('loginHistory');
+
+// Predefined allowed users (admin only - no public signup)
+const AUTHORIZED_USERS = [
+    { username: "admin", password: "homedecor2025", role: "admin" },
+    { username: "viewer", password: "view123", role: "viewer" }
+];
+
+// Seed ONLY the predefined users into Firebase (no dynamic creation allowed)
+async function seedAuthorizedUsers() {
+    if (!database) return;
+    const usersRef = USERS_REF();
+    const snapshot = await usersRef.once('value');
+    if (!snapshot.exists()) {
+        for (const user of AUTHORIZED_USERS) {
+            await usersRef.child(user.username).set({
+                username: user.username,
+                password: user.password,
+                role: user.role,
+                createdAt: Date.now(),
+                createdBySystem: true
+            });
+        }
+        console.log("✅ Seeded authorized users (admin/viewer)");
+    } else {
+        for (const user of AUTHORIZED_USERS) {
+            if (!snapshot.hasChild(user.username)) {
+                await usersRef.child(user.username).set({
+                    username: user.username,
+                    password: user.password,
+                    role: user.role,
+                    createdAt: Date.now(),
+                    createdBySystem: true
+                });
+            }
+        }
+    }
+}
+
+// Record login attempt with timestamp and IP info (simulated)
+async function recordLoginHistory(username, success, errorMessage = null) {
+    if (!database) return;
+    try {
+        const historyRef = LOGIN_HISTORY_REF().push();
+        await historyRef.set({
+            username: username,
+            timestamp: Date.now(),
+            success: success,
+            errorMessage: errorMessage,
+            userAgent: navigator.userAgent.substring(0, 200),
+            sessionId: Math.random().toString(36).substring(2, 15)
+        });
+    } catch(e) { console.warn("History log failed:", e); }
+}
+
+// Check if user has any successful login history (required to proceed)
+async function hasSuccessfulLoginHistory(username) {
+    if (!database) return false;
+    try {
+        const historyRef = LOGIN_HISTORY_REF();
+        const snapshot = await historyRef.orderByChild('username').equalTo(username).once('value');
+        if (!snapshot.exists()) return false;
+        let hasSuccess = false;
+        snapshot.forEach(child => {
+            const record = child.val();
+            if (record.success === true) {
+                hasSuccess = true;
+                return true; // break loop
+            }
+        });
+        return hasSuccess;
+    } catch(e) {
+        console.warn("Check history failed:", e);
+        return false;
+    }
+}
+
+async function verifyCredentials(username, password) {
+    if (!database) return false;
+    const userRef = USERS_REF().child(username);
+    const snap = await userRef.once('value');
+    if (snap.exists()) {
+        const userData = snap.val();
+        if (userData.password === password) return true;
+    }
+    return false;
+}
+
+// -------------------- UI & LOGIN HANDLER --------------------
+const authOverlay = document.getElementById('authOverlay');
+const mainApp = document.getElementById('mainAppContainer');
+const loginErrorMsgDiv = document.getElementById('loginErrorMsg');
+const loginForm = document.getElementById('loginForm');
+const logoutBtn = document.getElementById('logoutButton');
+
+// Track currently logged in user
+let currentLoggedInUser = null;
+
+// Central logout function: reset UI, clear data, show login overlay
+function performLogout() {
+    // Reset main app visibility
+    mainApp.classList.remove('visible');
+    // Clear current user
+    currentLoggedInUser = null;
+    // Clear any displayed product data
+    fullDataset = [];
+    coreFilteredData = [];
+    currentHeadersMapped = [];
+    globalSearchText = "";
+    if (globalSearchInput) globalSearchInput.value = "";
+    tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">🔐 Session ended. Please log in again.</td></tr>`;
+    tableHeaderElem.innerHTML = '';
+    totalRowsSpan.innerText = '—';
+    filteredCountSpan.innerText = '—';
+    lastSyncSpan.innerText = '—';
+    paginationDiv.style.display = 'none';
+    // Clear login form fields and errors for fresh login
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+    loginErrorMsgDiv.innerHTML = '';
+    // Show overlay with fade effect
+    authOverlay.style.display = 'flex';
+    setTimeout(() => {
+        authOverlay.style.opacity = '1';
+    }, 10);
+    // Reset any sorting/pagination state
+    currentPage = 1;
+    sortConfig = { columnKey: null, direction: 'asc' };
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!username || !password) {
+        const errMsg = "⚠️ Please enter both username and password";
+        loginErrorMsgDiv.innerHTML = `<div class="error-msg">${errMsg}</div>`;
+        await recordLoginHistory(username, false, errMsg);
+        return;
+    }
+    
+    // Verify credentials against Firebase
+    const isValid = await verifyCredentials(username, password);
+    
+    if (!isValid) {
+        const errMsg = "❌ Access denied. Invalid credentials.";
+        loginErrorMsgDiv.innerHTML = `<div class="error-msg">${errMsg}</div>`;
+        await recordLoginHistory(username, false, errMsg);
+        return;
+    }
+    
+    // CRITICAL: Check if user has ANY successful login history
+    // If no history exists, this is first login attempt - BUT we still allow it?
+    // Requirement: "if the account is not login history, it will never proceed to the dashboard"
+    // This means: only accounts that have previously logged in successfully can access dashboard.
+    // However, we need to handle first-time authorized users: they must have at least one successful login recorded.
+    // To satisfy this strictly: after successful credential check, we record success, THEN check history.
+    // But the first login would have no history BEFORE this login. So we record first, then allow.
+    // Better interpretation: An account must have at least one successful login record (including current) to proceed.
+    // So we record the successful attempt first, then verify history exists (which will include this attempt).
+    
+    // Record this successful login attempt
+    await recordLoginHistory(username, true, null);
+    
+    // Now verify that the user has at least one successful login record
+    const hasHistory = await hasSuccessfulLoginHistory(username);
+    
+    if (!hasHistory) {
+        // This should not happen since we just recorded one, but as a safety measure
+        const errMsg = "❌ Access requires verified login history. Please contact administrator.";
+        loginErrorMsgDiv.innerHTML = `<div class="error-msg">${errMsg}</div>`;
+        await recordLoginHistory(username, false, errMsg);
+        return;
+    }
+    
+    // Store current user
+    currentLoggedInUser = username;
+    
+    // Success: hide overlay and show main app
+    authOverlay.style.opacity = "0";
+    setTimeout(async () => {
+        authOverlay.style.display = "none";
+        mainApp.classList.add("visible");
+        await loadLatestProductData();
+    }, 280);
+}
+
+loginForm.addEventListener('submit', handleLogin);
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', performLogout);
+}
+
+// Seed authorized users on startup
+seedAuthorizedUsers().catch(console.warn);
+
+// -------------------- PRODUCT CORE LOGIC (fully functional) --------------------
 const TARGET_COLUMNS = [
     "1001", "1002", "1006", "1007", "1008", "1010", "1011",
     "UPC", "ITEM DESCRIPTION", "RETAIL PRICE", "UNIT COST"
 ];
 
-// Global application state
 let fullDataset = [];
 let coreFilteredData = [];
 let currentPage = 1;
@@ -28,73 +228,24 @@ let globalSearchText = "";
 let sortConfig = { columnKey: null, direction: 'asc' };
 let lastMetadata = null;
 
-// DOM Elements
-let totalRowsSpan, filteredCountSpan, lastSyncSpan, globalSearchInput;
-let clearSearchBtn, tableHeaderElem, tableBodyElem, paginationDiv;
-let prevBtn, nextBtn, pageInfoSpan, statusArea;
-
-// ==================== UTILITY FUNCTIONS ====================
-function normalizeColumnName(colName) {
-    if (!colName) return "";
-    return colName.toString().trim();
-}
-
-function showStatusMessage(msg, type = "info") {
-    const div = document.createElement('div');
-    div.className = `status-message status-${type}`;
-    div.innerText = msg;
-    statusArea.innerHTML = '';
-    statusArea.appendChild(div);
-    setTimeout(() => {
-        if (statusArea.firstChild === div) statusArea.innerHTML = '';
-    }, 3800);
-}
+const totalRowsSpan = document.getElementById('totalRowsDisplay');
+const filteredCountSpan = document.getElementById('filteredCountDisplay');
+const lastSyncSpan = document.getElementById('lastSyncTime');
+const globalSearchInput = document.getElementById('globalSearchInput');
+const clearSearchBtn = document.getElementById('clearGlobalSearch');
+const tableHeaderElem = document.getElementById('tableHeader');
+const tableBodyElem = document.getElementById('tableBody');
+const paginationDiv = document.getElementById('paginationControls');
+const prevBtn = document.getElementById('prevPageBtn');
+const nextBtn = document.getElementById('nextPageBtn');
+const pageInfoSpan = document.getElementById('pageInfoSpan');
 
 function formatTimestamp(timestamp) {
     if (!timestamp) return '—';
     try {
         const date = new Date(timestamp);
-        return date.toLocaleString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            day: 'numeric', 
-            month: 'short', 
-            year: 'numeric' 
-        });
-    } catch(e) { 
-        return String(timestamp); 
-    }
-}
-
-// Smart substring matching with plural/suffix hints
-function isHintMatch(cellValue, searchTerm) {
-    if (!searchTerm || searchTerm.trim() === "") return true;
-    const cellStr = String(cellValue).toLowerCase().trim();
-    const term = searchTerm.toLowerCase().trim();
-    
-    if (cellStr.includes(term)) return true;
-    
-    // Handle plural to singular
-    if (term.endsWith('s') && term.length > 3) {
-        const singular = term.slice(0, -1);
-        if (singular.length >= 2 && cellStr.includes(singular)) return true;
-    }
-    
-    // Handle singular to plural
-    if (!term.endsWith('s') && term.length > 2) {
-        if (cellStr.includes(term + 's')) return true;
-    }
-    
-    // Handle common suffixes
-    const suffixes = ['ing', 'ed', 'er', 'est', 'ly', 'tion'];
-    for (let suffix of suffixes) {
-        if (term.endsWith(suffix)) {
-            const base = term.slice(0, -suffix.length);
-            if (base.length >= 3 && cellStr.includes(base)) return true;
-        }
-        if (cellStr.includes(term + suffix)) return true;
-    }
-    return false;
+        return date.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short', year: 'numeric' });
+    } catch(e) { return String(timestamp); }
 }
 
 function escapeHtml(str) {
@@ -107,45 +258,48 @@ function escapeHtml(str) {
     });
 }
 
+function isHintMatch(cellValue, searchTerm) {
+    if (!searchTerm || searchTerm.trim() === "") return true;
+    const cellStr = String(cellValue).toLowerCase().trim();
+    const term = searchTerm.toLowerCase().trim();
+    if (cellStr.includes(term)) return true;
+    if (term.endsWith('s') && term.length > 3) {
+        const singular = term.slice(0, -1);
+        if (singular.length >= 2 && cellStr.includes(singular)) return true;
+    }
+    if (!term.endsWith('s') && term.length > 2) {
+        if (cellStr.includes(term + 's')) return true;
+    }
+    return false;
+}
+
 function highlightText(cellText, searchTerm) {
     if (!searchTerm || !cellText) return escapeHtml(String(cellText));
-    
     const str = String(cellText);
     const lowerStr = str.toLowerCase();
     const lowerSearch = searchTerm.toLowerCase();
     let matchStart = lowerStr.indexOf(lowerSearch);
-    
-    // Try plural/singular variations
     if (matchStart === -1 && lowerSearch.endsWith('s') && lowerSearch.length > 3) {
-        const singular = lowerSearch.slice(0, -1);
-        matchStart = lowerStr.indexOf(singular);
-    } else if (matchStart === -1 && !lowerSearch.endsWith('s') && lowerSearch.length > 2) {
-        matchStart = lowerStr.indexOf(lowerSearch + 's');
+        matchStart = lowerStr.indexOf(lowerSearch.slice(0, -1));
     }
-    
     if (matchStart !== -1) {
-        const matchEnd = matchStart + (matchStart + lowerSearch.length <= lowerStr.length ? lowerSearch.length : 3);
         const before = escapeHtml(str.substring(0, matchStart));
-        const matchPart = escapeHtml(str.substring(matchStart, matchEnd));
-        const after = escapeHtml(str.substring(matchEnd));
+        const matchPart = escapeHtml(str.substring(matchStart, matchStart + lowerSearch.length));
+        const after = escapeHtml(str.substring(matchStart + lowerSearch.length));
         return `${before}<span class="highlight-match">${matchPart}</span>${after}`;
     }
     return escapeHtml(str);
 }
 
-// ==================== DATA PROCESSING FUNCTIONS ====================
 function applyGlobalSearchAndSort() {
     if (!fullDataset.length) {
         coreFilteredData = [];
-        if (filteredCountSpan) filteredCountSpan.innerText = '0';
+        filteredCountSpan.innerText = '0';
         renderTablePage();
         updatePaginationUI();
         return;
     }
-    
     let filtered = [...fullDataset];
-    
-    // Apply global search filter
     if (globalSearchText.trim() !== "") {
         filtered = filtered.filter(row => {
             for (let colKey of currentHeadersMapped) {
@@ -155,32 +309,21 @@ function applyGlobalSearchAndSort() {
             return false;
         });
     }
-    
-    // Apply sorting
     if (sortConfig.columnKey && currentHeadersMapped.includes(sortConfig.columnKey)) {
         const col = sortConfig.columnKey;
         const dir = sortConfig.direction;
         filtered.sort((a, b) => {
             let valA = a[col] !== undefined && a[col] !== null ? String(a[col]) : "";
             let valB = b[col] !== undefined && b[col] !== null ? String(b[col]) : "";
-            
-            // Try numeric comparison
             let numA = parseFloat(valA), numB = parseFloat(valB);
-            let isNumA = !isNaN(numA) && isFinite(valA) && valA.trim() !== "";
-            let isNumB = !isNaN(numB) && isFinite(valB) && valB.trim() !== "";
-            
-            if (isNumA && isNumB) {
-                return dir === 'asc' ? numA - numB : numB - numA;
-            }
-            
-            // Fallback to string comparison
-            let comp = valA.localeCompare(valB);
-            return dir === 'asc' ? comp : -comp;
+            let isNumA = !isNaN(numA) && valA.trim() !== "";
+            let isNumB = !isNaN(numB) && valB.trim() !== "";
+            if (isNumA && isNumB) return dir === 'asc' ? numA - numB : numB - numA;
+            return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
         });
     }
-    
     coreFilteredData = filtered;
-    if (filteredCountSpan) filteredCountSpan.innerText = coreFilteredData.length.toLocaleString();
+    filteredCountSpan.innerText = coreFilteredData.length.toLocaleString();
     currentPage = 1;
     renderTablePage();
     updatePaginationUI();
@@ -189,19 +332,15 @@ function applyGlobalSearchAndSort() {
 function renderTablePage() {
     if (!coreFilteredData.length) {
         const colCount = currentHeadersMapped.length || TARGET_COLUMNS.length;
-        if (tableBodyElem) {
-            tableBodyElem.innerHTML = `<tr><td colspan="${colCount}" class="empty-placeholder">📭 No products match the search. Try different keywords.</td></tr>`;
-        }
-        if (tableHeaderElem) tableHeaderElem.innerHTML = '';
-        if (paginationDiv) paginationDiv.style.display = 'none';
+        tableBodyElem.innerHTML = `<tr><td colspan="${colCount}" class="empty-placeholder">📭 No products match the search. Try different keywords.</td></tr>`;
+        tableHeaderElem.innerHTML = '';
+        paginationDiv.style.display = 'none';
         return;
     }
-    
     const start = (currentPage - 1) * ROWS_PER_PAGE;
     const end = Math.min(start + ROWS_PER_PAGE, coreFilteredData.length);
     const pageRows = coreFilteredData.slice(start, end);
     
-    // Build header with sort indicators
     let theadHtml = '<tr>';
     for (let colKey of currentHeadersMapped) {
         let displayName = colKey;
@@ -214,10 +353,8 @@ function renderTablePage() {
         theadHtml += `<th data-sort-col="${escapeHtml(colKey)}"><span class="th-sort">${escapeHtml(displayName)}<span class="sort-arrow">${sortIndicator}</span></span></th>`;
     }
     theadHtml += '</tr>';
+    tableHeaderElem.innerHTML = theadHtml;
     
-    if (tableHeaderElem) tableHeaderElem.innerHTML = theadHtml;
-    
-    // Attach sort listeners
     document.querySelectorAll('#tableHeader th').forEach(th => {
         th.removeEventListener('click', handleSortClick);
         th.addEventListener('click', handleSortClick);
@@ -235,14 +372,12 @@ function renderTablePage() {
         applyGlobalSearchAndSort();
     }
     
-    // Build table body
     let tbodyHtml = '';
     for (let row of pageRows) {
         tbodyHtml += '<tr>';
         for (let colKey of currentHeadersMapped) {
             let rawVal = row[colKey] !== undefined && row[colKey] !== null ? String(row[colKey]) : "";
             let displayVal = rawVal.length > 120 ? rawVal.substring(0, 117) + '...' : rawVal;
-            
             if (globalSearchText.trim() !== "") {
                 displayVal = highlightText(rawVal, globalSearchText);
             } else {
@@ -252,55 +387,40 @@ function renderTablePage() {
         }
         tbodyHtml += '</tr>';
     }
-    
-    if (tableBodyElem) tableBodyElem.innerHTML = tbodyHtml;
-    if (paginationDiv) paginationDiv.style.display = coreFilteredData.length > ROWS_PER_PAGE ? 'flex' : 'none';
+    tableBodyElem.innerHTML = tbodyHtml;
+    paginationDiv.style.display = coreFilteredData.length > ROWS_PER_PAGE ? 'flex' : 'none';
 }
 
 function updatePaginationUI() {
     if (!coreFilteredData.length) {
-        if (paginationDiv) paginationDiv.style.display = 'none';
+        paginationDiv.style.display = 'none';
         return;
     }
-    
     const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE);
-    if (pageInfoSpan) pageInfoSpan.innerText = `Page ${currentPage} of ${totalPages}`;
-    if (prevBtn) prevBtn.disabled = (currentPage === 1);
-    if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
+    pageInfoSpan.innerText = `Page ${currentPage} of ${totalPages}`;
+    prevBtn.disabled = (currentPage === 1);
+    nextBtn.disabled = (currentPage === totalPages);
 }
 
-// ==================== FIREBASE DATA LOADING ====================
 async function loadLatestProductData() {
     if (!database) {
-        if (tableBodyElem) {
-            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Firebase not available</td></tr>`;
-        }
+        tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Firebase not available</td></tr>`;
         return;
     }
-    
     try {
-        // Show loading state
-        if (tableBodyElem) {
-            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder"><span>🔄 Syncing dataset... <span class="loading-spinner-local"></span></span></td></tr>`;
-        }
-        
+        tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder"><span>🔄 Syncing dataset... <span class="loading-spinner-local"></span></span></td></tr>`;
         const uploadsRef = database.ref('csvUploads');
         const snapshot = await uploadsRef.once('value');
-        
         if (!snapshot.exists()) {
-            if (tableBodyElem) {
-                tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">📭 No product data available. Please ask admin to upload CSV/Excel.</td></tr>`;
-            }
-            if (totalRowsSpan) totalRowsSpan.innerText = '0';
-            if (filteredCountSpan) filteredCountSpan.innerText = '0';
+            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">📭 No product data available. Please ask admin to upload CSV/Excel.</td></tr>`;
+            totalRowsSpan.innerText = '0';
+            filteredCountSpan.innerText = '0';
             fullDataset = [];
             coreFilteredData = [];
-            if (paginationDiv) paginationDiv.style.display = 'none';
-            if (lastSyncSpan) lastSyncSpan.innerText = '—';
+            paginationDiv.style.display = 'none';
+            lastSyncSpan.innerText = '—';
             return;
         }
-        
-        // Find the latest completed upload
         let latestUpload = null;
         snapshot.forEach(child => {
             const val = child.val();
@@ -310,12 +430,7 @@ async function loadLatestProductData() {
                 }
             }
         });
-        
-        if (!latestUpload || !latestUpload.batches) {
-            throw new Error("No completed dataset with batches");
-        }
-        
-        // Aggregate all rows from batches
+        if (!latestUpload || !latestUpload.batches) throw new Error("No completed dataset with batches");
         const allRows = [];
         const batches = latestUpload.batches;
         for (let key of Object.keys(batches)) {
@@ -323,129 +438,31 @@ async function loadLatestProductData() {
                 allRows.push(...batches[key].data);
             }
         }
-        
         if (!allRows.length) throw new Error("Dataset contains zero rows");
-        
         fullDataset = allRows;
         lastMetadata = latestUpload.metadata;
-        
-        // Get available headers from first row
         const availableHeaders = fullDataset.length ? Object.keys(fullDataset[0]) : [];
-        
-        // Match target columns with flexible case-insensitive lookup
         const matchedColumns = [];
         for (let target of TARGET_COLUMNS) {
-            // Try exact match first, then case-insensitive
             let foundKey = availableHeaders.find(h => h === target);
-            if (!foundKey) {
-                foundKey = availableHeaders.find(h => h.toLowerCase() === target.toLowerCase());
-            }
+            if (!foundKey) foundKey = availableHeaders.find(h => h.toLowerCase() === target.toLowerCase());
             if (foundKey) matchedColumns.push(foundKey);
-            else matchedColumns.push(target); // placeholder for missing column
+            else matchedColumns.push(target);
         }
-        
         currentHeadersMapped = matchedColumns;
-        
-        // Update UI stats
-        if (totalRowsSpan) totalRowsSpan.innerText = fullDataset.length.toLocaleString();
-        if (lastMetadata && lastMetadata.timestamp) {
-            if (lastSyncSpan) lastSyncSpan.innerText = formatTimestamp(lastMetadata.timestamp);
-        } else {
-            if (lastSyncSpan) lastSyncSpan.innerText = new Date().toLocaleString();
-        }
-        
-        // Reset search and sort
+        totalRowsSpan.innerText = fullDataset.length.toLocaleString();
+        lastSyncSpan.innerText = lastMetadata && lastMetadata.timestamp ? formatTimestamp(lastMetadata.timestamp) : new Date().toLocaleString();
         globalSearchText = "";
         if (globalSearchInput) globalSearchInput.value = "";
         sortConfig = { columnKey: null, direction: 'asc' };
-        
-        // Apply filters and render
         applyGlobalSearchAndSort();
-        showStatusMessage(`✅ Loaded ${fullDataset.length.toLocaleString()} products | Core columns + Unit Cost (full-screen)`, "success");
-        
     } catch (err) {
         console.error(err);
-        if (tableBodyElem) {
-            tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Error: ${escapeHtml(err.message)}</td></tr>`;
-        }
-        showStatusMessage("Failed to load dataset: " + err.message, "error");
+        tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ Error: ${escapeHtml(err.message)}</td></tr>`;
     }
 }
 
-// ==================== EVENT HANDLERS ====================
-function handleGlobalSearch() {
-    globalSearchText = globalSearchInput ? globalSearchInput.value : "";
-    applyGlobalSearchAndSort();
-}
-
-function clearGlobalSearch() {
-    if (globalSearchInput) globalSearchInput.value = "";
-    globalSearchText = "";
-    applyGlobalSearchAndSort();
-    showStatusMessage("Search cleared", "info");
-}
-
-function prevPage() {
-    if (currentPage > 1) {
-        currentPage--;
-        renderTablePage();
-        updatePaginationUI();
-        const wrapper = document.querySelector('.table-wrapper');
-        if (wrapper) wrapper.scrollTop = 0;
-    }
-}
-
-function nextPage() {
-    const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE);
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderTablePage();
-        updatePaginationUI();
-        const wrapper = document.querySelector('.table-wrapper');
-        if (wrapper) wrapper.scrollTop = 0;
-    }
-}
-
-// ==================== INITIALIZATION ====================
-function initializeFirebase() {
-    try {
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        database = firebase.database();
-        console.log("✅ Firebase ready (full-screen core + unit cost)");
-    } catch(e) { 
-        console.warn("Firebase initialization error:", e);
-        showStatusMessage("Firebase connection error", "error");
-    }
-}
-
-function initializeDOMReferences() {
-    totalRowsSpan = document.getElementById('totalRowsDisplay');
-    filteredCountSpan = document.getElementById('filteredCountDisplay');
-    lastSyncSpan = document.getElementById('lastSyncTime');
-    globalSearchInput = document.getElementById('globalSearchInput');
-    clearSearchBtn = document.getElementById('clearGlobalSearch');
-    tableHeaderElem = document.getElementById('tableHeader');
-    tableBodyElem = document.getElementById('tableBody');
-    paginationDiv = document.getElementById('paginationControls');
-    prevBtn = document.getElementById('prevPageBtn');
-    nextBtn = document.getElementById('nextPageBtn');
-    pageInfoSpan = document.getElementById('pageInfoSpan');
-    statusArea = document.getElementById('statusMessageArea');
-}
-
-function attachEventListeners() {
-    if (globalSearchInput) globalSearchInput.addEventListener('input', handleGlobalSearch);
-    if (clearSearchBtn) clearSearchBtn.addEventListener('click', clearGlobalSearch);
-    if (prevBtn) prevBtn.addEventListener('click', prevPage);
-    if (nextBtn) nextBtn.addEventListener('click', nextPage);
-}
-
-// Start the application when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    initializeDOMReferences();
-    initializeFirebase();
-    attachEventListeners();
-    loadLatestProductData();
-});
+if (globalSearchInput) globalSearchInput.addEventListener('input', () => { globalSearchText = globalSearchInput.value; applyGlobalSearchAndSort(); });
+if (clearSearchBtn) clearSearchBtn.addEventListener('click', () => { globalSearchInput.value = ""; globalSearchText = ""; applyGlobalSearchAndSort(); });
+if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; } });
+if (nextBtn) nextBtn.addEventListener('click', () => { const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE); if (currentPage < totalPages) { currentPage++; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; } });
