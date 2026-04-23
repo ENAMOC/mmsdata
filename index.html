@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>Homedecor Portal | AI Stock Monitor & Secure Access</title>
     <style>
         /* RESET & GLOBAL */
@@ -350,7 +350,7 @@
             transform: scale(0.97);
         }
 
-        /* ===== FULL SCREEN AI MODAL (REDESIGNED) ===== */
+        /* ===== FULL SCREEN AI MODAL (REDESIGNED + MOBILE RESPONSIVE) ===== */
         .ai-modal-overlay {
             position: fixed;
             top: 0;
@@ -372,7 +372,7 @@
             visibility: visible;
             opacity: 1;
         }
-        /* FULL SCREEN CONTAINER — takes entire viewport, no borders, no margins */
+        /* FULL SCREEN CONTAINER — takes entire viewport */
         .ai-modal-container {
             background: #ffffff;
             width: 100%;
@@ -435,15 +435,15 @@
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 24px;
+            gap: 20px;
             flex-shrink: 0;
         }
         .filter-item {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             background: white;
-            padding: 6px 20px;
+            padding: 6px 18px;
             border-radius: 60px;
             border: 1px solid #cbd5e1;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -463,6 +463,27 @@
             font-weight: 500;
         }
         .filter-item input { width: 100px; text-align: center; }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 6px 18px;
+            border-radius: 60px;
+            border: 1px solid #cbd5e1;
+        }
+        .checkbox-item label {
+            font-weight: 600;
+            font-size: 12px;
+            color: #1f3b4c;
+            cursor: pointer;
+        }
+        .checkbox-item input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin: 0;
+        }
         .ai-summary-badge {
             background: #eef7ea;
             padding: 8px 24px;
@@ -472,12 +493,16 @@
             color: #1f543e;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
+        /* AI RESULTS AREA - enhanced for mobile scrolling */
         .ai-results-area {
             flex: 1;
             overflow-y: auto;
+            overflow-x: auto;
             padding: 24px 28px;
             background: #ffffff;
+            -webkit-overflow-scrolling: touch;
         }
+        /* Analysis table - responsive improvements */
         .analysis-full-table {
             width: 100%;
             border-collapse: collapse;
@@ -485,6 +510,7 @@
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            min-width: 600px;
         }
         .analysis-full-table th {
             background: #2c5e3f;
@@ -494,6 +520,7 @@
             top: 0;
             font-weight: 700;
             font-size: 13px;
+            white-space: nowrap;
         }
         .analysis-full-table td {
             border-bottom: 1px solid #e9edf2;
@@ -502,8 +529,8 @@
             background-color: white;
         }
         .analysis-full-table tr:hover td { background: #fef9e6; }
-        .badge-low-modal { background: #f7d7c3; color: #b43b0c; border-radius: 30px; padding: 4px 12px; font-weight: 700; display: inline-block; font-size: 11px; }
-        .badge-source-modal { background: #d3e6d3; color: #1e5a2e; border-radius: 30px; padding: 4px 12px; font-weight: 600; }
+        .badge-low-modal { background: #f7d7c3; color: #b43b0c; border-radius: 30px; padding: 4px 12px; font-weight: 700; display: inline-block; font-size: 11px; white-space: nowrap; }
+        .badge-source-modal { background: #d3e6d3; color: #1e5a2e; border-radius: 30px; padding: 4px 12px; font-weight: 600; white-space: nowrap; }
         .empty-monitor-modal { text-align: center; padding: 60px 20px; color: #6c86a0; font-style: italic; font-size: 1.1rem; background: #ffffff; border-radius: 32px; }
 
         /* Product table */
@@ -591,13 +618,101 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* ========== ENHANCED MOBILE RESPONSIVENESS FOR AI MODAL ========== */
         @media (max-width: 700px) {
             .core-header, .filter-toolbar { padding: 8px 12px; }
             .data-table th, .data-table td { padding: 7px 8px; font-size: 11px; }
             .ai-modal-header h2 { font-size: 1.2rem; }
-            .ai-modal-filters { padding: 12px 16px; gap: 12px; }
-            .filter-item { padding: 4px 12px; gap: 6px; flex-wrap: wrap; }
-            .ai-summary-badge { font-size: 11px; padding: 5px 12px; }
+            .ai-modal-filters { padding: 12px 16px; gap: 12px; flex-direction: column; align-items: stretch; }
+            .filter-item, .checkbox-item { 
+                padding: 8px 16px; 
+                gap: 12px; 
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .filter-item select, .filter-item input {
+                flex: 1;
+                min-width: 120px;
+            }
+            .ai-summary-badge { 
+                font-size: 11px; 
+                padding: 8px 16px; 
+                text-align: center;
+                word-break: break-word;
+            }
+            .ai-results-area {
+                padding: 16px 12px;
+            }
+            .analysis-full-table {
+                min-width: 550px;
+                font-size: 12px;
+            }
+            .analysis-full-table th {
+                padding: 10px 8px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+            .analysis-full-table td {
+                padding: 10px 8px;
+            }
+            .analysis-full-table td:first-child,
+            .analysis-full-table td:last-child {
+                white-space: normal;
+                word-break: break-word;
+                max-width: 180px;
+            }
+            .badge-low-modal, .badge-source-modal {
+                white-space: normal;
+                word-break: keep-all;
+                display: inline-block;
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+            .close-modal-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 28px;
+            }
+            .ai-modal-header {
+                padding: 14px 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .filter-item, .checkbox-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                border-radius: 32px;
+                background: #ffffff;
+                width: 100%;
+            }
+            .filter-item label, .checkbox-item label {
+                font-size: 12px;
+            }
+            .filter-item select, .filter-item input {
+                width: 100%;
+                padding: 10px 12px;
+            }
+            .ai-modal-filters {
+                gap: 12px;
+                padding: 12px;
+            }
+            .ai-summary-badge {
+                font-size: 10px;
+                text-align: center;
+            }
+            .analysis-full-table {
+                min-width: 500px;
+            }
+            .analysis-full-table td:first-child,
+            .analysis-full-table td:last-child {
+                max-width: 140px;
+            }
+            .ai-results-area {
+                padding: 12px 8px;
+            }
         }
     </style>
     <!-- Firebase SDKs -->
@@ -643,7 +758,6 @@
                 <input type="text" id="globalSearchInput" placeholder="Search across products (UPC, description, price...)" autocomplete="off">
                 <button id="clearGlobalSearch" class="clear-search">✖ Clear</button>
             </div>
-            <!-- CLASS NAME FILTER (main) -->
             <div class="class-filter-group">
                 <label>🏷️ CLASS NAME:</label>
                 <select id="classFilterSelect">
@@ -654,7 +768,6 @@
             <button id="stockMonitorAiBtn" class="stock-ai-btn">🧠 AI Stock Monitor (Full‑Screen)</button>
         </div>
 
-        <!-- Product Table -->
         <div class="table-wrapper" id="tableWrapper">
             <table class="data-table" id="coreDataTable">
                 <thead id="tableHeader"></thead>
@@ -669,7 +782,7 @@
     </div>
 </div>
 
-<!-- FULLSCREEN AI MODAL (NOW TRULY FULL SCREEN) -->
+<!-- FULLSCREEN AI MODAL with BRANCH FILTER + REPLENISHABLE TOGGLE -->
 <div id="aiFullscreenModal" class="ai-modal-overlay">
     <div class="ai-modal-container">
         <div class="ai-modal-header">
@@ -677,6 +790,12 @@
             <button id="closeFullscreenModal" class="close-modal-btn" aria-label="Close fullscreen">✕</button>
         </div>
         <div class="ai-modal-filters">
+            <div class="filter-item">
+                <label>📍 Focus Branch:</label>
+                <select id="modalBranchFilter">
+                    <option value="">All Branches (Cross‑Branch Alerts)</option>
+                </select>
+            </div>
             <div class="filter-item">
                 <label>📂 Filter by CLASS NAME:</label>
                 <select id="modalClassFilter">
@@ -687,10 +806,14 @@
                 <label>⚠️ Low stock threshold (units):</label>
                 <input type="number" id="modalLowStockThreshold" value="5" step="1" min="0">
             </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="onlyReplenishableCheckbox">
+                <label>🔄 Only show items that can be replenished from another branch</label>
+            </div>
             <div id="modalSummaryStats" class="ai-summary-badge">🧠 AI ready — adjust filters</div>
         </div>
         <div class="ai-results-area" id="modalResultsContainer">
-            <div class="empty-monitor-modal">✨ Select filters and AI will analyze cross‑branch stock. (Threshold ≤5 = low stock)</div>
+            <div class="empty-monitor-modal">✨ Select branch, class and threshold. AI will show low‑stock items and identify available stock in other branches for replenishment.</div>
         </div>
     </div>
 </div>
@@ -801,7 +924,7 @@
         selectedClassName = "";
         if (globalSearchInput) globalSearchInput.value = "";
         if (classFilterSelect) classFilterSelect.value = "";
-        tableBodyElem.innerHTML = `<tr><td colspan="12" class="empty-placeholder">🔐 Session ended. Please log in again.</td></tr>`;
+        tableBodyElem.innerHTML = `<tr><td colspan="12" class="empty-placeholder">🔐 Session ended. Please log in again.</div>`;
         tableHeaderElem.innerHTML = '';
         totalRowsSpan.innerText = '—';
         filteredCountSpan.innerText = '—';
@@ -931,6 +1054,20 @@
         }
     }
 
+    function populateBranchFilter() {
+        const branchSelect = document.getElementById('modalBranchFilter');
+        if (!branchSelect) return;
+        const existingBranches = BRANCH_CODES.filter(bc => currentHeadersMapped.includes(bc));
+        let options = '<option value="">All Branches (Cross‑Branch Alerts)</option>';
+        existingBranches.forEach(b => {
+            options += `<option value="${b}">Branch ${b}</option>`;
+        });
+        branchSelect.innerHTML = options;
+        const currentVal = branchSelect.value;
+        if (currentVal && existingBranches.includes(currentVal)) branchSelect.value = currentVal;
+        else branchSelect.value = "";
+    }
+
     function applyGlobalSearchAndSort() {
         if (!fullDataset.length) { coreFilteredData = []; filteredCountSpan.innerText = '0'; renderTablePage(); updatePaginationUI(); return; }
         let filtered = [...fullDataset];
@@ -965,7 +1102,7 @@
         updatePaginationUI();
     }
 
-    function renderTablePage() { /* same as original */ 
+    function renderTablePage() { 
         if (!coreFilteredData.length) {
             const colCount = currentHeadersMapped.length || 11;
             tableBodyElem.innerHTML = `<tr><td colspan="${colCount}" class="empty-placeholder">📭 No products match filters.</td></tr>`;
@@ -981,7 +1118,7 @@
             let indicator = sortConfig.columnKey === col ? (sortConfig.direction === 'asc' ? ' ▲' : ' ▼') : ' ↕️';
             theadHtml += `<th data-sort-col="${escapeHtml(col)}">${escapeHtml(col)}<span class="sort-arrow">${indicator}</span></th>`;
         }
-        theadHtml += '</tr>';
+        theadHtml += '</table>';
         tableHeaderElem.innerHTML = theadHtml;
         document.querySelectorAll('#tableHeader th').forEach(th => {
             th.removeEventListener('click', handleSortClick);
@@ -1008,14 +1145,14 @@
         tableBodyElem.innerHTML = tbodyHtml;
         paginationDiv.style.display = coreFilteredData.length > ROWS_PER_PAGE ? 'flex' : 'none';
     }
-    function updatePaginationUI() { /* as original */ 
+    function updatePaginationUI() { 
         if (!coreFilteredData.length) { paginationDiv.style.display = 'none'; return; }
         const totalPages = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE);
         pageInfoSpan.innerText = `Page ${currentPage} of ${totalPages}`;
         prevBtn.disabled = (currentPage === 1);
         nextBtn.disabled = (currentPage === totalPages);
     }
-    async function loadLatestProductData() { /* identical logic */ 
+    async function loadLatestProductData() { 
         if (!database) return;
         try {
             tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder"><span>🔄 Syncing dataset... <span class="loading-spinner-local"></span></span></td></tr>`;
@@ -1049,6 +1186,7 @@
             if (classFilterSelect) classFilterSelect.value = "";
             sortConfig = { columnKey: null, direction: 'asc' };
             populateAllClassFilters();
+            populateBranchFilter();
             applyGlobalSearchAndSort();
         } catch(err) {
             tableBodyElem.innerHTML = `<tr><td colspan="11" class="empty-placeholder">⚠️ ${escapeHtml(err.message)}</td></tr>`;
@@ -1061,12 +1199,14 @@
     if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; } });
     if (nextBtn) nextBtn.addEventListener('click', () => { const total = Math.ceil(coreFilteredData.length / ROWS_PER_PAGE); if (currentPage < total) { currentPage++; renderTablePage(); updatePaginationUI(); document.querySelector('.table-wrapper').scrollTop = 0; } });
 
-    // FULLSCREEN AI STOCK MONITOR (Analysis unchanged)
+    // FULLSCREEN AI STOCK MONITOR with BRANCH FILTER + REPLENISHABLE TOGGLE
     const stockAiBtn = document.getElementById('stockMonitorAiBtn');
     const modalOverlay = document.getElementById('aiFullscreenModal');
     const closeModalBtn = document.getElementById('closeFullscreenModal');
     const modalClassFilter = document.getElementById('modalClassFilter');
     const modalThreshold = document.getElementById('modalLowStockThreshold');
+    const modalBranchFilter = document.getElementById('modalBranchFilter');
+    const onlyReplenishableCheckbox = document.getElementById('onlyReplenishableCheckbox');
     const modalSummary = document.getElementById('modalSummaryStats');
     const modalResultsContainer = document.getElementById('modalResultsContainer');
 
@@ -1078,6 +1218,9 @@
         }
         const threshold = parseInt(modalThreshold.value, 10);
         const selectedClass = modalClassFilter.value;
+        const focusedBranch = modalBranchFilter.value;
+        const onlyReplenishable = onlyReplenishableCheckbox.checked;
+
         let filteredProducts = [...fullDataset];
         if (selectedClass && selectedClass !== "") {
             filteredProducts = filteredProducts.filter(row => (row["CLASS NAME"] ? String(row["CLASS NAME"]).trim() : "") === selectedClass);
@@ -1087,61 +1230,137 @@
             modalResultsContainer.innerHTML = '<div class="empty-monitor-modal">❌ Branch stock columns not found in dataset.</div>';
             return;
         }
+
         const alerts = [];
-        for (let row of filteredProducts) {
-            const upc = row["UPC"] || "—";
-            const desc = row["ITEM DESCRIPTION"] || "Unnamed";
-            const productLabel = `${upc} | ${desc.substring(0,60)}`;
-            let lowBranches = [], healthyBranches = [];
-            for (let branch of existingBranches) {
-                let stock = Number(row[branch]);
-                if (isNaN(stock)) stock = 0;
-                if (stock <= threshold) lowBranches.push({ branch, stock });
-                else healthyBranches.push({ branch, stock });
+
+        if (focusedBranch && focusedBranch !== "") {
+            // FOCUSED BRANCH MODE: show products where this branch is low, and suggest best source from other branches
+            if (!existingBranches.includes(focusedBranch)) {
+                modalResultsContainer.innerHTML = `<div class="empty-monitor-modal">⚠️ Branch ${escapeHtml(focusedBranch)} not available in current dataset.</div>`;
+                return;
             }
-            if (lowBranches.length && healthyBranches.length) {
-                for (let low of lowBranches) {
-                    let best = healthyBranches.reduce((a,b) => b.stock > a.stock ? b : a, healthyBranches[0]);
-                    let urgency = low.stock === 0 ? "🚨 OUT" : (low.stock <= 2 ? "⚠️ CRITICAL" : "Low");
+            for (let row of filteredProducts) {
+                const lowStockVal = Number(row[focusedBranch]);
+                if (isNaN(lowStockVal)) continue;
+                if (lowStockVal <= threshold) {
+                    const upc = row["UPC"] || "—";
+                    const desc = row["ITEM DESCRIPTION"] || "Unnamed";
+                    const productLabel = `${upc} | ${desc.substring(0,70)}`;
+                    let bestSource = null;
+                    let highestStock = -1;
+                    for (let branch of existingBranches) {
+                        if (branch === focusedBranch) continue;
+                        let stock = Number(row[branch]);
+                        if (isNaN(stock)) stock = 0;
+                        if (stock > highestStock) {
+                            highestStock = stock;
+                            bestSource = { branch, stock };
+                        }
+                    }
+                    const isReplenishable = bestSource && bestSource.stock > 0;
+                    if (onlyReplenishable && !isReplenishable) continue;
+
+                    let urgency = lowStockVal === 0 ? "🚨 OUT" : (lowStockVal <= 2 ? "⚠️ CRITICAL" : "Low");
+                    let suggestion = "";
+                    if (bestSource && bestSource.stock > threshold) {
+                        suggestion = `✨ Transfer from ${bestSource.branch} (stock ${bestSource.stock}) to ${focusedBranch}`;
+                    } else if (bestSource && bestSource.stock > 0) {
+                        suggestion = `⚠️ Limited source: ${bestSource.branch} has only ${bestSource.stock} units. Reorder needed.`;
+                    } else {
+                        suggestion = `🚚 No positive stock in other branches. Immediate purchase required.`;
+                    }
                     alerts.push({
                         product: productLabel,
-                        lowBranch: low.branch,
-                        lowStock: low.stock,
-                        sourceBranch: best.branch,
-                        sourceStock: best.stock,
-                        urgency: urgency
+                        lowBranch: focusedBranch,
+                        lowStock: lowStockVal,
+                        sourceBranch: bestSource ? bestSource.branch : "—",
+                        sourceStock: bestSource ? bestSource.stock : 0,
+                        urgency: urgency,
+                        suggestion: suggestion
                     });
                 }
             }
+        } else {
+            // ALL BRANCHES MODE: original cross-branch logic
+            for (let row of filteredProducts) {
+                const upc = row["UPC"] || "—";
+                const desc = row["ITEM DESCRIPTION"] || "Unnamed";
+                const productLabel = `${upc} | ${desc.substring(0,70)}`;
+                let lowBranches = [], healthyBranches = [];
+                for (let branch of existingBranches) {
+                    let stock = Number(row[branch]);
+                    if (isNaN(stock)) stock = 0;
+                    if (stock <= threshold) lowBranches.push({ branch, stock });
+                    else healthyBranches.push({ branch, stock });
+                }
+                if (lowBranches.length && healthyBranches.length) {
+                    for (let low of lowBranches) {
+                        let best = healthyBranches.reduce((a,b) => b.stock > a.stock ? b : a, healthyBranches[0]);
+                        let urgency = low.stock === 0 ? "🚨 OUT" : (low.stock <= 2 ? "⚠️ CRITICAL" : "Low");
+                        alerts.push({
+                            product: productLabel,
+                            lowBranch: low.branch,
+                            lowStock: low.stock,
+                            sourceBranch: best.branch,
+                            sourceStock: best.stock,
+                            urgency: urgency,
+                            suggestion: `✨ Transfer/pack from ${best.branch} (stock ${best.stock}) to ${low.branch} (${urgency})`
+                        });
+                    }
+                }
+            }
         }
+
         if (alerts.length === 0) {
-            modalResultsContainer.innerHTML = '<div class="empty-monitor-modal">✨ Great news! No cross-branch stock alerts for the selected category/threshold. All branches have sufficient stock.</div>';
-            modalSummary.innerHTML = `✅ AI: Balanced | ${selectedClass ? `Class: ${escapeHtml(selectedClass)}` : 'All categories'} | threshold ≤ ${threshold}`;
+            let msg = focusedBranch ? (onlyReplenishable ? `✅ Branch ${focusedBranch} has no replenishable low‑stock items (≤${threshold}) with available stock elsewhere.` : `✅ Branch ${focusedBranch} has no products with stock ≤ ${threshold}.`) : `✨ Great news! No cross-branch stock alerts for the selected filters. All branches have sufficient stock.`;
+            modalResultsContainer.innerHTML = `<div class="empty-monitor-modal">${msg}</div>`;
+            let summaryText = focusedBranch ? `🧠 AI: Branch ${focusedBranch} | threshold ≤ ${threshold} | No low-stock items` : `✅ AI: Balanced | ${selectedClass ? `Class: ${escapeHtml(selectedClass)}` : 'All categories'} | threshold ≤ ${threshold}`;
+            if (onlyReplenishable && focusedBranch) summaryText += ` (only replenishable)`;
+            modalSummary.innerHTML = summaryText;
             return;
         }
-        modalSummary.innerHTML = `🧠 AI: ${alerts.length} replenishment opportunities | ${selectedClass ? `Class: ${escapeHtml(selectedClass)}` : 'All products'} | threshold ≤ ${threshold}`;
-        let html = `<table class="analysis-full-table"><thead><tr><th>Product (UPC / Description)</th><th>Low Branch</th><th>Low Stock</th><th>Best Source Branch</th><th>Source Stock</th><th>🤖 AI Suggestion</th></tr></thead><tbody>`;
-        for (let a of alerts.slice(0, 150)) {
+
+        let summaryText = focusedBranch ? 
+            `🧠 AI: Branch ${focusedBranch} — ${alerts.length} low‑stock items (≤${threshold})` :
+            `🧠 AI: ${alerts.length} cross‑branch replenishment opportunities | ${selectedClass ? `Class: ${escapeHtml(selectedClass)}` : 'All products'} | threshold ≤ ${threshold}`;
+        if (onlyReplenishable && focusedBranch) summaryText += ` (only replenishable)`;
+        modalSummary.innerHTML = summaryText;
+
+        let html = `<table class="analysis-full-table"><thead><tr><th>Product (UPC / Description)</th><th>Low Branch</th><th>Low Stock</th><th>Source Branch</th><th>Source Stock</th><th>🤖 AI Suggestion</th></tr></thead><tbody>`;
+        for (let a of alerts.slice(0, 200)) {
             html += `<tr>
                 <td title="${escapeHtml(a.product)}">${escapeHtml(a.product.substring(0,70))}</td>
                 <td><span class="badge-low-modal">${escapeHtml(a.lowBranch)}</span></td>
                 <td><strong style="color:#c0392b;">${a.lowStock}</strong></td>
                 <td><span class="badge-source-modal">${escapeHtml(a.sourceBranch)}</span></td>
                 <td>${a.sourceStock}</td>
-                <td style="background:#fef7e0;">✨ Transfer/pack from ${escapeHtml(a.sourceBranch)} (stock ${a.sourceStock}) to ${escapeHtml(a.lowBranch)} (${a.urgency})</td>
-             </tr>`;
+                <td style="background:#fef7e0;">${escapeHtml(a.suggestion)}</td>
+            </tr>`;
         }
-        if (alerts.length > 150) html += `<tr><td colspan="6">... and ${alerts.length-150} more alerts. Adjust threshold for refined view.</td></tr>`;
-        html += `</tbody></table><div style="font-size:12px; margin-top:16px; background:#f1f5f9; padding:12px; border-radius:24px;">💡 AI logic: suggests packing from branch with highest stock to branches with stock ≤${threshold}. Filter by CLASS NAME to focus analysis.</div>`;
+        if (alerts.length > 200) html += `<tr><td colspan="6">... and ${alerts.length-200} more alerts. Adjust threshold or filters to refine.</td></tr>`;
+        html += `</tbody></table><div style="font-size:12px; margin-top:16px; background:#f1f5f9; padding:12px; border-radius:24px;">💡 AI logic: For a focused branch, items with stock ≤ threshold are listed, with best available source from other branches. Toggle "Only show replenishable" to see only items that can be fulfilled from another branch.</div>`;
         modalResultsContainer.innerHTML = html;
     }
-    function openAIModal() { if (!fullDataset.length) { alert("Product data not loaded yet. Please wait for sync."); return; } populateAllClassFilters(); modalThreshold.value = "5"; if (modalClassFilter) modalClassFilter.value = selectedClassName || ""; runFullscreenAnalysis(); modalOverlay.classList.add('active'); }
+
+    function openAIModal() {
+        if (!fullDataset.length) { alert("Product data not loaded yet. Please wait for sync."); return; }
+        populateAllClassFilters();
+        populateBranchFilter();
+        modalThreshold.value = "5";
+        if (modalClassFilter) modalClassFilter.value = selectedClassName || "";
+        if (modalBranchFilter) modalBranchFilter.value = "";
+        onlyReplenishableCheckbox.checked = false;
+        runFullscreenAnalysis();
+        modalOverlay.classList.add('active');
+    }
     function closeAIModal() { modalOverlay.classList.remove('active'); }
     stockAiBtn.addEventListener('click', openAIModal);
     closeModalBtn.addEventListener('click', closeAIModal);
     modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeAIModal(); });
     modalThreshold.addEventListener('input', runFullscreenAnalysis);
     modalClassFilter.addEventListener('change', runFullscreenAnalysis);
+    if (modalBranchFilter) modalBranchFilter.addEventListener('change', runFullscreenAnalysis);
+    if (onlyReplenishableCheckbox) onlyReplenishableCheckbox.addEventListener('change', runFullscreenAnalysis);
 </script>
 </body>
 </html>
